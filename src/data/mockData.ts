@@ -312,3 +312,41 @@ export const mockGoals: Goal[] = [
     createdAt: "2026-05-01T10:00:00Z",
   },
 ];
+
+export const mockMonthlyReportData = [
+  {
+    month: "Jan",
+    incomeCents: 360000,
+    expensesCents: 230000,
+    freeSpendingCents: 31000,
+  },
+  {
+    month: "Feb",
+    incomeCents: 370000,
+    expensesCents: 245000,
+    freeSpendingCents: 39000,
+  },
+  {
+    month: "Mar",
+    incomeCents: 380000,
+    expensesCents: 260000,
+    freeSpendingCents: 42000,
+  },
+  {
+    month: "Apr",
+    incomeCents: 390000,
+    expensesCents: 238000,
+    freeSpendingCents: 28000,
+  },
+  {
+    month: "May",
+    incomeCents: 380000,
+    expensesCents: 214500,
+    freeSpendingCents: 28200,
+  },
+];
+
+export const mockFreeSpendingReport = {
+  limitCents: 40000,
+  usedCents: 28200,
+};

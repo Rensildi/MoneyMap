@@ -4,6 +4,7 @@ import { DashboardPage } from "../pages/DashboardPage";
 import { PlaceholderPage } from "../pages/PlaceholderPage";
 import { AccountsPage } from "../pages/AccountsPage";
 import { TransactionsPage } from "../pages/TransactionsPage";
+import { BudgetPage } from "../pages/BudgetPage";
 
 export default function App() {
   return (
@@ -13,15 +14,7 @@ export default function App() {
           <Route path="/" element={<DashboardPage />} />
           <Route path="/accounts" element={<AccountsPage />} />
           <Route path="/transactions" element={<TransactionsPage />} />
-          <Route
-            path="/budget"
-            element={
-              <PlaceholderPage
-                title="Budget"
-                description="Set monthly category budgets and your free spending limit."
-              />
-            }
-          />
+          <Route path="/budget" element={<BudgetPage />} />
           <Route
             path="/bills"
             element={

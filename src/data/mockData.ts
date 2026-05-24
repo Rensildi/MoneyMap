@@ -1,4 +1,5 @@
 import type { Account } from "../types/account";
+import type { MonthlyBudget } from "../types/budget";
 import type { Category } from "../types/category";
 import type { Transaction } from "../types/transaction";
 
@@ -120,6 +121,51 @@ export const mockTransactions: Transaction[] = [
     merchant: "Transfer to Savings",
     transactionDate: "2026-05-24",
     createdAt: "2026-05-24T09:00:00Z",
+  },
+];
+
+export const mockMonthlyBudgets: MonthlyBudget[] = [
+  {
+    id: "budget-restaurants",
+    categoryId: "expense-restaurants",
+    month: "2026-05",
+    budgetedCents: 20000,
+  },
+  {
+    id: "budget-coffee",
+    categoryId: "expense-coffee",
+    month: "2026-05",
+    budgetedCents: 7500,
+  },
+  {
+    id: "budget-shopping",
+    categoryId: "expense-shopping",
+    month: "2026-05",
+    budgetedCents: 15000,
+  },
+  {
+    id: "budget-groceries",
+    categoryId: "expense-groceries",
+    month: "2026-05",
+    budgetedCents: 40000,
+  },
+  {
+    id: "budget-gas",
+    categoryId: "expense-gas",
+    month: "2026-05",
+    budgetedCents: 18000,
+  },
+  {
+    id: "budget-rent",
+    categoryId: "expense-rent",
+    month: "2026-05",
+    budgetedCents: 120000,
+  },
+  {
+    id: "budget-utilities",
+    categoryId: "expense-utilities",
+    month: "2026-05",
+    budgetedCents: 20000,
   },
 ];
 

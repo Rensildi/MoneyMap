@@ -3,12 +3,15 @@ import {
   CalendarDays,
   CreditCard,
   LayoutDashboard,
+  LogOut,
   ReceiptText,
   Settings,
   Target,
   WalletCards,
 } from "lucide-react";
 import { NavLink, Outlet } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../hooks/useAuth";
 
 const navItems = [
   {
@@ -54,6 +57,15 @@ const navItems = [
 ];
 
 export function AppShell() {
+
+  const navigate = useNavigate();
+  const { signOut } = useAuth();
+
+  async function handleSignOut() {
+    await signOut();
+    navigate("/auth");
+  }
+
   return (
     <div className="min-h-screen bg-transparent">
       <aside className="fixed left-0 top-0 hidden h-screen w-72 border-r border-white/70 bg-white/70 p-5 backdrop-blur-xl lg:block">
@@ -94,6 +106,17 @@ export function AppShell() {
             );
           })}
         </nav>
+
+        <div className="absolute bottom-5 left-5 right-5">
+          <button
+            type="button"
+            onClick={handleSignOut}
+            className="flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium text-slate-500 transition hover:bg-red-50 hover:text-red-600"
+          >
+            <LogOut size={19} />
+            Sign out
+          </button>
+        </div>
       </aside>
 
       <main className="pb-24 lg:ml-72 lg:pb-0">

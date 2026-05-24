@@ -140,16 +140,16 @@ export function BillsPage() {
           </p>
         </div>
 
-        <div className="w-full sm:w-48">
+        <div className="w-full rounded-[1.5rem] border border-white/70 bg-white/80 p-4 shadow-lg shadow-slate-200/60 backdrop-blur sm:w-60">
           <label className="text-xs font-semibold uppercase tracking-wide text-slate-400">
-            Month
+            Viewing month
           </label>
 
           <input
             type="month"
             value={selectedMonth}
             onChange={(event) => setSelectedMonth(event.target.value)}
-            className="mt-2 w-full rounded-2xl border border-slate-200 bg-white/80 px-4 py-3 text-sm font-medium outline-none transition focus:border-slate-950"
+            className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium outline-none transition focus:border-slate-950"
           />
         </div>
       </div>

@@ -2,7 +2,7 @@ import {
   CalendarClock,
   CheckCircle2,
   Clock3,
-  MoreHorizontal,
+  Trash2,
   TriangleAlert,
 } from "lucide-react";
 import type { Account } from "../../types/account";
@@ -150,11 +150,20 @@ export function BillCard({
 
         <button
           type="button"
-          onClick={() => onDeleteBill(bill.id)}
+          onClick={() => {
+            const confirmed = window.confirm(
+              `Delete ${bill.name}? This cannot be undone.`,
+            );
+
+            if (confirmed) {
+              onDeleteBill(bill.id);
+            }
+          }}
           className="rounded-2xl p-2 text-slate-400 transition hover:bg-red-50 hover:text-red-600"
           aria-label="Delete bill"
+          title="Delete bill"
         >
-          <MoreHorizontal size={20} />
+          <Trash2 size={20} />
         </button>
       </div>
 

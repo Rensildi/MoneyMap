@@ -117,3 +117,27 @@ export async function seedDefaultCategoriesIfNeeded(
 
   return (data ?? []).map((row) => mapCategoryRow(row as CategoryRow));
 }
+
+export async function updateCategoryFreeSpendingStatus(
+  userId: string,
+  categoryId: string,
+  countsTowardFreeSpending: boolean,
+): Promise<Category> {
+  const { data, error } = await supabase
+    .from("categories")
+    .update({
+      counts_toward_free_spending: countsTowardFreeSpending,
+    })
+    .eq("id", categoryId)
+    .eq("user_id", userId)
+    .select(
+      "id, user_id, name, type, counts_toward_free_spending, created_at",
+    )
+    .single();
+
+  if (error) {
+    throw error;
+  }
+
+  return mapCategoryRow(data as CategoryRow);
+}

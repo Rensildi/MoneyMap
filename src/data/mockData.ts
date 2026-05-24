@@ -2,6 +2,7 @@ import type { Account } from "../types/account";
 import type { MonthlyBudget } from "../types/budget";
 import type { Category } from "../types/category";
 import type { Transaction } from "../types/transaction";
+import type { Bill } from "../types/bill";
 
 export const mockAccounts: Account[] = [
   {
@@ -220,5 +221,63 @@ export const mockSpendingByCategory = [
   {
     name: "Fun",
     amount: 135,
+  },
+];
+
+export const mockRecurringBills: Bill[] = [
+  {
+    id: "bill-rent",
+    name: "Rent",
+    amountCents: 120000,
+    categoryId: "expense-rent",
+    accountId: "1",
+    dueDay: 1,
+    frequency: "monthly",
+    isActive: true,
+    createdAt: "2026-05-01T10:00:00Z",
+  },
+  {
+    id: "bill-phone",
+    name: "Phone Bill",
+    amountCents: 8000,
+    categoryId: "expense-utilities",
+    accountId: "1",
+    dueDay: 10,
+    frequency: "monthly",
+    isActive: true,
+    createdAt: "2026-05-01T10:00:00Z",
+  },
+  {
+    id: "bill-insurance",
+    name: "Car Insurance",
+    amountCents: 17000,
+    categoryId: "expense-utilities",
+    accountId: "1",
+    dueDay: 15,
+    frequency: "monthly",
+    isActive: true,
+    createdAt: "2026-05-01T10:00:00Z",
+  },
+  {
+    id: "bill-netflix",
+    name: "Netflix",
+    amountCents: 1699,
+    categoryId: "expense-utilities",
+    accountId: "1",
+    dueDay: 20,
+    frequency: "monthly",
+    isActive: true,
+    createdAt: "2026-05-01T10:00:00Z",
+  },
+  {
+    id: "bill-gym",
+    name: "Gym Membership",
+    amountCents: 3000,
+    categoryId: "expense-utilities",
+    accountId: "1",
+    dueDay: 25,
+    frequency: "monthly",
+    isActive: true,
+    createdAt: "2026-05-01T10:00:00Z",
   },
 ];

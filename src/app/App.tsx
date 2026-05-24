@@ -5,6 +5,7 @@ import { PlaceholderPage } from "../pages/PlaceholderPage";
 import { AccountsPage } from "../pages/AccountsPage";
 import { TransactionsPage } from "../pages/TransactionsPage";
 import { BudgetPage } from "../pages/BudgetPage";
+import { BillsPage } from "../pages/BillsPage";
 
 export default function App() {
   return (
@@ -15,15 +16,7 @@ export default function App() {
           <Route path="/accounts" element={<AccountsPage />} />
           <Route path="/transactions" element={<TransactionsPage />} />
           <Route path="/budget" element={<BudgetPage />} />
-          <Route
-            path="/bills"
-            element={
-              <PlaceholderPage
-                title="Bills"
-                description="Track recurring bills, subscriptions, and due dates."
-              />
-            }
-          />
+          <Route path="/bills" element={<BillsPage />} />
           <Route
             path="/reports"
             element={

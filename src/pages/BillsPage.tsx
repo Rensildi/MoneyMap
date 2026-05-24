@@ -1,0 +1,334 @@
+import { useMemo, useState } from "react";
+import {
+  CalendarClock,
+  CheckCircle2,
+  DollarSign,
+  TriangleAlert,
+} from "lucide-react";
+import { BillCard } from "../components/bills/BillCard";
+import { BillForm } from "../components/bills/BillForm";
+import { Card } from "../components/ui/Card";
+import {
+  mockAccounts,
+  mockCategories,
+  mockRecurringBills,
+} from "../data/mockData";
+import { formatMoney } from "../lib/formatMoney";
+import type { Bill } from "../types/bill";
+
+function getCurrentMonth() {
+  return new Date().toISOString().slice(0, 7);
+}
+
+function getBillDate(month: string, dueDay: number) {
+  const [year, monthNumber] = month.split("-").map(Number);
+  const lastDayOfMonth = new Date(year, monthNumber, 0).getDate();
+  const safeDueDay = Math.min(dueDay, lastDayOfMonth);
+
+  return new Date(year, monthNumber - 1, safeDueDay);
+}
+
+function getDaysUntil(date: Date) {
+  const today = new Date();
+  const todayStart = new Date(
+    today.getFullYear(),
+    today.getMonth(),
+    today.getDate(),
+  );
+
+  const targetStart = new Date(
+    date.getFullYear(),
+    date.getMonth(),
+    date.getDate(),
+  );
+
+  const millisecondsPerDay = 1000 * 60 * 60 * 24;
+
+  return Math.ceil(
+    (targetStart.getTime() - todayStart.getTime()) / millisecondsPerDay,
+  );
+}
+
+export function BillsPage() {
+  const [selectedMonth, setSelectedMonth] = useState(getCurrentMonth());
+  const [bills, setBills] = useState<Bill[]>(mockRecurringBills);
+  const [paidBillIds, setPaidBillIds] = useState<Set<string>>(new Set());
+
+  const activeBills = useMemo(() => {
+    return bills.filter((bill) => bill.isActive);
+  }, [bills]);
+
+  const sortedBills = useMemo(() => {
+    return [...activeBills].sort((a, b) => a.dueDay - b.dueDay);
+  }, [activeBills]);
+
+  const monthlyBillsTotalCents = useMemo(() => {
+    return activeBills.reduce((total, bill) => total + bill.amountCents, 0);
+  }, [activeBills]);
+
+  const paidTotalCents = useMemo(() => {
+    return activeBills
+      .filter((bill) => paidBillIds.has(bill.id))
+      .reduce((total, bill) => total + bill.amountCents, 0);
+  }, [activeBills, paidBillIds]);
+
+  const unpaidTotalCents = monthlyBillsTotalCents - paidTotalCents;
+
+  const overdueBillsCount = useMemo(() => {
+    return activeBills.filter((bill) => {
+      const billDate = getBillDate(selectedMonth, bill.dueDay);
+      const daysUntil = getDaysUntil(billDate);
+
+      return !paidBillIds.has(bill.id) && daysUntil < 0;
+    }).length;
+  }, [activeBills, selectedMonth, paidBillIds]);
+
+  const dueSoonBillsCount = useMemo(() => {
+    return activeBills.filter((bill) => {
+      const billDate = getBillDate(selectedMonth, bill.dueDay);
+      const daysUntil = getDaysUntil(billDate);
+
+      return !paidBillIds.has(bill.id) && daysUntil >= 0 && daysUntil <= 7;
+    }).length;
+  }, [activeBills, selectedMonth, paidBillIds]);
+
+  function handleCreateBill(bill: Bill) {
+    setBills((currentBills) => [bill, ...currentBills]);
+  }
+
+  function handleTogglePaid(billId: string) {
+    setPaidBillIds((currentPaidBillIds) => {
+      const nextPaidBillIds = new Set(currentPaidBillIds);
+
+      if (nextPaidBillIds.has(billId)) {
+        nextPaidBillIds.delete(billId);
+      } else {
+        nextPaidBillIds.add(billId);
+      }
+
+      return nextPaidBillIds;
+    });
+  }
+
+  function handleDeleteBill(billId: string) {
+    setBills((currentBills) =>
+      currentBills.filter((bill) => bill.id !== billId),
+    );
+
+    setPaidBillIds((currentPaidBillIds) => {
+      const nextPaidBillIds = new Set(currentPaidBillIds);
+      nextPaidBillIds.delete(billId);
+      return nextPaidBillIds;
+    });
+  }
+
+  return (
+    <div>
+      <div className="mb-8 flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
+        <div>
+          <p className="text-sm font-semibold text-blue-600">
+            Bills & Subscriptions
+          </p>
+
+          <h1 className="mt-2 text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">
+            Recurring payments
+          </h1>
+
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
+            Track rent, phone bills, insurance, subscriptions, and other
+            recurring expenses manually.
+          </p>
+        </div>
+
+        <div className="w-full sm:w-48">
+          <label className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+            Month
+          </label>
+
+          <input
+            type="month"
+            value={selectedMonth}
+            onChange={(event) => setSelectedMonth(event.target.value)}
+            className="mt-2 w-full rounded-2xl border border-slate-200 bg-white/80 px-4 py-3 text-sm font-medium outline-none transition focus:border-slate-950"
+          />
+        </div>
+      </div>
+
+      <div className="mb-5 grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+        <Card>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-slate-500">
+                Monthly Bills
+              </p>
+
+              <p className="mt-3 text-2xl font-semibold text-slate-950">
+                {formatMoney(monthlyBillsTotalCents)}
+              </p>
+            </div>
+
+            <div className="rounded-2xl bg-blue-50 p-3 text-blue-600">
+              <DollarSign size={22} />
+            </div>
+          </div>
+        </Card>
+
+        <Card>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-slate-500">Paid</p>
+
+              <p className="mt-3 text-2xl font-semibold text-emerald-600">
+                {formatMoney(paidTotalCents)}
+              </p>
+            </div>
+
+            <div className="rounded-2xl bg-emerald-50 p-3 text-emerald-600">
+              <CheckCircle2 size={22} />
+            </div>
+          </div>
+        </Card>
+
+        <Card>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-slate-500">Unpaid</p>
+
+              <p className="mt-3 text-2xl font-semibold text-red-600">
+                {formatMoney(unpaidTotalCents)}
+              </p>
+            </div>
+
+            <div className="rounded-2xl bg-red-50 p-3 text-red-600">
+              <TriangleAlert size={22} />
+            </div>
+          </div>
+        </Card>
+
+        <Card>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-slate-500">Due Soon</p>
+
+              <p className="mt-3 text-2xl font-semibold text-amber-600">
+                {dueSoonBillsCount}
+              </p>
+            </div>
+
+            <div className="rounded-2xl bg-amber-50 p-3 text-amber-600">
+              <CalendarClock size={22} />
+            </div>
+          </div>
+
+          {overdueBillsCount > 0 && (
+            <p className="mt-3 text-xs font-semibold text-red-600">
+              {overdueBillsCount} overdue
+            </p>
+          )}
+        </Card>
+      </div>
+
+      <div className="grid gap-5 lg:grid-cols-[1fr_24rem]">
+        <div>
+          <Card className="mb-5">
+            <div>
+              <p className="text-sm font-medium text-slate-500">
+                Bill Calendar
+              </p>
+
+              <h2 className="mt-1 text-xl font-semibold tracking-tight text-slate-950">
+                Upcoming recurring expenses
+              </h2>
+
+              <p className="mt-2 text-sm leading-6 text-slate-500">
+                Mark bills as paid when you handle them. In the database version,
+                paid status will be saved per month.
+              </p>
+            </div>
+          </Card>
+
+          <div className="grid gap-4 xl:grid-cols-2">
+            {sortedBills.map((bill) => {
+              const category = mockCategories.find(
+                (item) => item.id === bill.categoryId,
+              );
+
+              const account = mockAccounts.find(
+                (item) => item.id === bill.accountId,
+              );
+
+              return (
+                <BillCard
+                  key={bill.id}
+                  bill={bill}
+                  category={category}
+                  account={account}
+                  selectedMonth={selectedMonth}
+                  isPaid={paidBillIds.has(bill.id)}
+                  onTogglePaid={handleTogglePaid}
+                  onDeleteBill={handleDeleteBill}
+                />
+              );
+            })}
+          </div>
+
+          {sortedBills.length === 0 && (
+            <div className="rounded-[2rem] border border-dashed border-slate-300 bg-white/60 p-10 text-center">
+              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 text-slate-500">
+                <CalendarClock size={24} />
+              </div>
+
+              <p className="mt-4 font-medium text-slate-600">
+                No recurring bills yet.
+              </p>
+
+              <p className="mt-2 text-sm text-slate-400">
+                Add rent, subscriptions, insurance, or other repeating expenses.
+              </p>
+            </div>
+          )}
+        </div>
+
+        <div className="space-y-5">
+          <BillForm
+            accounts={mockAccounts}
+            categories={mockCategories}
+            onCreateBill={handleCreateBill}
+          />
+
+          <Card>
+            <p className="text-sm font-medium text-slate-500">
+              Suggested bills to track
+            </p>
+
+            <div className="mt-4 space-y-2 text-sm text-slate-600">
+              <div className="rounded-2xl bg-slate-50 px-4 py-3">
+                Rent or mortgage
+              </div>
+
+              <div className="rounded-2xl bg-slate-50 px-4 py-3">
+                Phone bill
+              </div>
+
+              <div className="rounded-2xl bg-slate-50 px-4 py-3">
+                Car payment
+              </div>
+
+              <div className="rounded-2xl bg-slate-50 px-4 py-3">
+                Insurance
+              </div>
+
+              <div className="rounded-2xl bg-slate-50 px-4 py-3">
+                Streaming subscriptions
+              </div>
+
+              <div className="rounded-2xl bg-slate-50 px-4 py-3">
+                Gym membership
+              </div>
+            </div>
+          </Card>
+        </div>
+      </div>
+    </div>
+  );
+}

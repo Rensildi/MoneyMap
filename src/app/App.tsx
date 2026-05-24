@@ -8,6 +8,7 @@ import { BudgetPage } from "../pages/BudgetPage";
 import { BillsPage } from "../pages/BillsPage";
 import { GoalsPage } from "../pages/GoalsPage";
 import { ReportsPage } from "../pages/ReportsPage";
+import { SettingsPage } from "../pages/SettingsPage";
 
 export default function App() {
   return (
@@ -21,15 +22,7 @@ export default function App() {
           <Route path="/bills" element={<BillsPage />} />
           <Route path="/goals" element={<GoalsPage />} />
           <Route path="/reports" element={<ReportsPage />} />
-          <Route
-            path="/settings"
-            element={
-              <PlaceholderPage
-                title="Settings"
-                description="Manage profile, currency, theme, and app preferences."
-              />
-            }
-          />
+          <Route path="/settings" element={<SettingsPage />} />
         </Route>
       </Routes>
     </BrowserRouter>

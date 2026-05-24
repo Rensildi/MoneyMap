@@ -1,9 +1,11 @@
-export function formatMoney(cents: number) {
+import type { CurrencyCode } from "../types/settings";
+
+export function formatMoney(cents: number, currency: CurrencyCode = "USD") {
   const dollars = cents / 100;
 
   return new Intl.NumberFormat("en-US", {
     style: "currency",
-    currency: "USD",
+    currency,
   }).format(dollars);
 }
 

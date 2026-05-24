@@ -4,6 +4,7 @@ import {
   CreditCard,
   Landmark,
   PiggyBank,
+  Trash2,
   TrendingUp,
 } from "lucide-react";
 import type { Account } from "../../types/account";
@@ -11,6 +12,7 @@ import { formatMoney } from "../../lib/formatMoney";
 
 type AccountCardProps = {
   account: Account;
+  onDeleteAccount?: (accountId: string) => void;
 };
 
 const accountTypeLabels = {
@@ -31,7 +33,7 @@ const accountTypeIcons = {
   investment: TrendingUp,
 };
 
-export function AccountCard({ account }: AccountCardProps) {
+export function AccountCard({ account, onDeleteAccount }: AccountCardProps) {
   const Icon = accountTypeIcons[account.type];
 
   const isDebtAccount =
@@ -59,15 +61,37 @@ export function AccountCard({ account }: AccountCardProps) {
           </div>
         </div>
 
-        <span
-          className={`rounded-full px-3 py-1 text-xs font-semibold ${
-            isDebtAccount
-              ? "bg-red-50 text-red-600"
-              : "bg-emerald-50 text-emerald-600"
-          }`}
-        >
-          Manual
-        </span>
+        <div className="flex items-center gap-2">
+          <span
+            className={`rounded-full px-3 py-1 text-xs font-semibold ${
+              isDebtAccount
+                ? "bg-red-50 text-red-600"
+                : "bg-emerald-50 text-emerald-600"
+            }`}
+          >
+            Saved
+          </span>
+
+          {onDeleteAccount && (
+            <button
+              type="button"
+              onClick={() => {
+                const confirmed = window.confirm(
+                  `Delete ${account.name}? This cannot be undone.`,
+                );
+
+                if (confirmed) {
+                  onDeleteAccount(account.id);
+                }
+              }}
+              className="rounded-2xl p-2 text-slate-400 transition hover:bg-red-50 hover:text-red-600"
+              aria-label="Delete account"
+              title="Delete account"
+            >
+              <Trash2 size={18} />
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="mt-8">

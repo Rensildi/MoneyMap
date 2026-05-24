@@ -1,13 +1,49 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { AccountCard } from "../components/accounts/AccountCard";
 import { AccountForm } from "../components/accounts/AccountForm";
 import { Card } from "../components/ui/Card";
-import { mockAccounts } from "../data/mockData";
+import { useAuth } from "../hooks/useAuth";
 import { formatMoney } from "../lib/formatMoney";
+import {
+  createAccount,
+  deleteAccount,
+  fetchAccounts,
+} from "../services/accountService";
 import type { Account } from "../types/account";
 
 export function AccountsPage() {
-  const [accounts, setAccounts] = useState<Account[]>(mockAccounts);
+  const { user } = useAuth();
+
+  const [accounts, setAccounts] = useState<Account[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [pageError, setPageError] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    async function loadAccounts() {
+      if (!user) {
+        return;
+      }
+
+      setLoading(true);
+      setPageError("");
+
+      try {
+        const savedAccounts = await fetchAccounts(user.id);
+        setAccounts(savedAccounts);
+      } catch (error) {
+        if (error instanceof Error) {
+          setPageError(error.message);
+        } else {
+          setPageError("Could not load accounts.");
+        }
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadAccounts();
+  }, [user]);
 
   const totalAssetsCents = useMemo(() => {
     return accounts
@@ -23,8 +59,53 @@ export function AccountsPage() {
 
   const netWorthCents = totalAssetsCents + totalDebtCents;
 
-  function handleCreateAccount(account: Account) {
-    setAccounts((currentAccounts) => [account, ...currentAccounts]);
+  async function handleCreateAccount(account: Account) {
+    if (!user || saving) {
+      return;
+    }
+
+    setSaving(true);
+    setPageError("");
+
+    try {
+      const savedAccount = await createAccount(user.id, {
+        name: account.name,
+        type: account.type,
+        balanceCents: account.balanceCents,
+      });
+
+      setAccounts((currentAccounts) => [savedAccount, ...currentAccounts]);
+    } catch (error) {
+      if (error instanceof Error) {
+        setPageError(error.message);
+      } else {
+        setPageError("Could not create account.");
+      }
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleDeleteAccount(accountId: string) {
+    if (!user) {
+      return;
+    }
+
+    setPageError("");
+
+    try {
+      await deleteAccount(user.id, accountId);
+
+      setAccounts((currentAccounts) =>
+        currentAccounts.filter((account) => account.id !== accountId),
+      );
+    } catch (error) {
+      if (error instanceof Error) {
+        setPageError(error.message);
+      } else {
+        setPageError("Could not delete account.");
+      }
+    }
   }
 
   return (
@@ -37,10 +118,16 @@ export function AccountsPage() {
           </h1>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
             Add your checking, savings, cash, credit card, loan, or investment
-            accounts manually. No bank connection needed.
+            accounts manually. These accounts are now saved in Supabase.
           </p>
         </div>
       </div>
+
+      {pageError && (
+        <div className="mb-5 rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
+          {pageError}
+        </div>
+      )}
 
       <div className="mb-5 grid gap-5 md:grid-cols-3">
         <Card>
@@ -71,25 +158,47 @@ export function AccountsPage() {
 
       <div className="grid gap-5 lg:grid-cols-[1fr_23rem]">
         <div>
-          <div className="grid gap-5 md:grid-cols-2">
-            {accounts.map((account) => (
-              <AccountCard key={account.id} account={account} />
-            ))}
-          </div>
-
-          {accounts.length === 0 && (
-            <div className="rounded-[2rem] border border-dashed border-slate-300 bg-white/60 p-10 text-center">
+          {loading ? (
+            <div className="rounded-[2rem] border border-white/70 bg-white/80 p-10 text-center shadow-xl shadow-slate-200/70 backdrop-blur">
               <p className="font-medium text-slate-600">
-                You do not have any accounts yet.
-              </p>
-              <p className="mt-2 text-sm text-slate-400">
-                Add your first account using the form.
+                Loading your accounts...
               </p>
             </div>
+          ) : (
+            <>
+              <div className="grid gap-5 md:grid-cols-2">
+                {accounts.map((account) => (
+                  <AccountCard
+                    key={account.id}
+                    account={account}
+                    onDeleteAccount={handleDeleteAccount}
+                  />
+                ))}
+              </div>
+
+              {accounts.length === 0 && (
+                <div className="rounded-[2rem] border border-dashed border-slate-300 bg-white/60 p-10 text-center">
+                  <p className="font-medium text-slate-600">
+                    You do not have any accounts yet.
+                  </p>
+                  <p className="mt-2 text-sm text-slate-400">
+                    Add your first account using the form.
+                  </p>
+                </div>
+              )}
+            </>
           )}
         </div>
 
-        <AccountForm onCreateAccount={handleCreateAccount} />
+        <div>
+          <AccountForm onCreateAccount={handleCreateAccount} />
+
+          {saving && (
+            <p className="mt-3 rounded-2xl bg-blue-50 px-4 py-3 text-sm font-semibold text-blue-700">
+              Saving account...
+            </p>
+          )}
+        </div>
       </div>
     </div>
   );

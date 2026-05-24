@@ -87,3 +87,40 @@ export async function createTransaction(
 
   return mapTransactionRow(data as TransactionRow);
 }
+
+export async function updateTransaction(
+  transactionId: string,
+  input: CreateTransactionInput,
+): Promise<Transaction> {
+  const { data, error } = await supabase
+    .rpc("update_transaction_with_balance", {
+      p_transaction_id: transactionId,
+      p_type: input.type,
+      p_amount_cents: input.amountCents,
+      p_account_id: input.accountId,
+      p_transaction_date: input.transactionDate,
+      p_transfer_account_id: input.transferAccountId ?? null,
+      p_category_id: input.categoryId ?? null,
+      p_merchant: input.merchant ?? null,
+      p_notes: input.notes ?? null,
+    })
+    .single();
+
+  if (error) {
+    throw error;
+  }
+
+  return mapTransactionRow(data as TransactionRow);
+}
+
+export async function deleteTransaction(
+  transactionId: string,
+): Promise<void> {
+  const { error } = await supabase.rpc("delete_transaction_with_balance", {
+    p_transaction_id: transactionId,
+  });
+
+  if (error) {
+    throw error;
+  }
+}

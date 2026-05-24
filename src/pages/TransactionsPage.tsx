@@ -14,7 +14,9 @@ import { fetchAccounts } from "../services/accountService";
 import { seedDefaultCategoriesIfNeeded } from "../services/categoryService";
 import {
   createTransaction,
+  deleteTransaction,
   fetchTransactions,
+  updateTransaction,
 } from "../services/transactionService";
 import type { Account } from "../types/account";
 import type { Category } from "../types/category";
@@ -52,6 +54,18 @@ export function TransactionsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [pageError, setPageError] = useState("");
+
+  const [editingTransaction, setEditingTransaction] =
+  useState<Transaction | null>(null);
+
+  async function reloadAccounts() {
+    if (!user) {
+      return;
+    }
+
+    const savedAccounts = await fetchAccounts(user.id);
+    setAccounts(savedAccounts);
+  }
 
   useEffect(() => {
     async function loadData() {
@@ -170,7 +184,7 @@ export function TransactionsPage() {
     });
   }
 
-  async function handleCreateTransaction(transaction: Transaction) {
+  async function handleSubmitTransaction(transaction: Transaction) {
     if (!user || saving) {
       return;
     }
@@ -179,31 +193,84 @@ export function TransactionsPage() {
     setPageError("");
 
     try {
-      const savedTransaction = await createTransaction({
-        type: transaction.type,
-        amountCents: transaction.amountCents,
-        accountId: transaction.accountId,
-        transferAccountId: transaction.transferAccountId,
-        categoryId: transaction.categoryId,
-        merchant: transaction.merchant,
-        notes: transaction.notes,
-        transactionDate: transaction.transactionDate,
-      });
+      if (editingTransaction) {
+        const savedTransaction = await updateTransaction(editingTransaction.id, {
+          type: transaction.type,
+          amountCents: transaction.amountCents,
+          accountId: transaction.accountId,
+          transferAccountId: transaction.transferAccountId,
+          categoryId: transaction.categoryId,
+          merchant: transaction.merchant,
+          notes: transaction.notes,
+          transactionDate: transaction.transactionDate,
+        });
 
-      setTransactions((currentTransactions) => [
-        savedTransaction,
-        ...currentTransactions,
-      ]);
+        setTransactions((currentTransactions) =>
+          currentTransactions.map((item) => {
+            if (item.id !== savedTransaction.id) {
+              return item;
+            }
 
-      updateAccountBalances(savedTransaction);
+            return savedTransaction;
+          }),
+        );
+
+        setEditingTransaction(null);
+      } else {
+        const savedTransaction = await createTransaction({
+          type: transaction.type,
+          amountCents: transaction.amountCents,
+          accountId: transaction.accountId,
+          transferAccountId: transaction.transferAccountId,
+          categoryId: transaction.categoryId,
+          merchant: transaction.merchant,
+          notes: transaction.notes,
+          transactionDate: transaction.transactionDate,
+        });
+
+        setTransactions((currentTransactions) => [
+          savedTransaction,
+          ...currentTransactions,
+        ]);
+      }
+
+      await reloadAccounts();
     } catch (error) {
       if (error instanceof Error) {
         setPageError(error.message);
       } else {
-        setPageError("Could not create transaction.");
+        setPageError("Could not save transaction.");
       }
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function handleDeleteTransaction(transactionId: string) {
+    if (!user) {
+      return;
+    }
+
+    setPageError("");
+
+    try {
+      await deleteTransaction(transactionId);
+
+      setTransactions((currentTransactions) =>
+        currentTransactions.filter((transaction) => transaction.id !== transactionId),
+      );
+
+      if (editingTransaction?.id === transactionId) {
+        setEditingTransaction(null);
+      }
+
+      await reloadAccounts();
+    } catch (error) {
+      if (error instanceof Error) {
+        setPageError(error.message);
+      } else {
+        setPageError("Could not delete transaction.");
+      }
     }
   }
 
@@ -326,6 +393,8 @@ export function TransactionsPage() {
                   transaction={transaction}
                   accounts={accounts}
                   categories={categories}
+                  onEditTransaction={setEditingTransaction}
+                  onDeleteTransaction={handleDeleteTransaction}
                 />
               ))}
 
@@ -357,7 +426,9 @@ export function TransactionsPage() {
           <TransactionForm
             accounts={accounts}
             categories={categories}
-            onCreateTransaction={handleCreateTransaction}
+            initialTransaction={editingTransaction}
+            onSubmitTransaction={handleSubmitTransaction}
+            onCancelEdit={() => setEditingTransaction(null)}
           />
 
           {saving && (

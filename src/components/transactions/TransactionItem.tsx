@@ -3,6 +3,8 @@ import {
   ArrowRightLeft,
   ArrowUpRight,
   CalendarDays,
+  Pencil,
+  Trash2,
 } from "lucide-react";
 import type { Account } from "../../types/account";
 import type { Category } from "../../types/category";
@@ -13,6 +15,8 @@ type TransactionItemProps = {
   transaction: Transaction;
   accounts: Account[];
   categories: Category[];
+  onEditTransaction: (transaction: Transaction) => void;
+  onDeleteTransaction: (transactionId: string) => void;
 };
 
 function formatDate(date: string) {
@@ -27,6 +31,8 @@ export function TransactionItem({
   transaction,
   accounts,
   categories,
+  onEditTransaction,
+  onDeleteTransaction,
 }: TransactionItemProps) {
   const account = accounts.find((item) => item.id === transaction.accountId);
   const transferAccount = accounts.find(
@@ -110,10 +116,42 @@ export function TransactionItem({
           </div>
         </div>
 
-        <p className={`text-right text-lg font-semibold ${amountClass}`}>
-          {sign}
-          {formatMoney(transaction.amountCents)}
-        </p>
+        <div className="flex items-center justify-between gap-3 sm:flex-col sm:items-end">
+          <p className={`text-right text-lg font-semibold ${amountClass}`}>
+            {sign}
+            {formatMoney(transaction.amountCents)}
+          </p>
+
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => onEditTransaction(transaction)}
+              className="rounded-2xl p-2 text-slate-400 transition hover:bg-blue-50 hover:text-blue-600"
+              title="Edit transaction"
+              aria-label="Edit transaction"
+            >
+              <Pencil size={17} />
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                const confirmed = window.confirm(
+                  "Delete this transaction? CashPilot will reverse its balance effect.",
+                );
+
+                if (confirmed) {
+                  onDeleteTransaction(transaction.id);
+                }
+              }}
+              className="rounded-2xl p-2 text-slate-400 transition hover:bg-red-50 hover:text-red-600"
+              title="Delete transaction"
+              aria-label="Delete transaction"
+            >
+              <Trash2 size={17} />
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );

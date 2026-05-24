@@ -1,17 +1,16 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
-import { ArrowDownRight, ArrowRightLeft, ArrowUpRight, Plus } from "lucide-react";
+import { ArrowDownRight, ArrowRightLeft, ArrowUpRight, Plus, Save } from "lucide-react";
 import type { Account } from "../../types/account";
 import type { Category } from "../../types/category";
-import type {
-  Transaction,
-  TransactionType,
-} from "../../types/transaction";
+import type { Transaction, TransactionType } from "../../types/transaction";
 import { dollarsToCents } from "../../lib/formatMoney";
 
 type TransactionFormProps = {
   accounts: Account[];
   categories: Category[];
-  onCreateTransaction: (transaction: Transaction) => void;
+  initialTransaction?: Transaction | null;
+  onSubmitTransaction: (transaction: Transaction) => void;
+  onCancelEdit?: () => void;
 };
 
 const transactionTypes: {
@@ -19,21 +18,9 @@ const transactionTypes: {
   value: TransactionType;
   icon: typeof ArrowUpRight;
 }[] = [
-  {
-    label: "Income",
-    value: "income",
-    icon: ArrowUpRight,
-  },
-  {
-    label: "Expense",
-    value: "expense",
-    icon: ArrowDownRight,
-  },
-  {
-    label: "Transfer",
-    value: "transfer",
-    icon: ArrowRightLeft,
-  },
+  { label: "Income", value: "income", icon: ArrowUpRight },
+  { label: "Expense", value: "expense", icon: ArrowDownRight },
+  { label: "Transfer", value: "transfer", icon: ArrowRightLeft },
 ];
 
 function getTodayDate() {
@@ -43,8 +30,12 @@ function getTodayDate() {
 export function TransactionForm({
   accounts,
   categories,
-  onCreateTransaction,
+  initialTransaction,
+  onSubmitTransaction,
+  onCancelEdit,
 }: TransactionFormProps) {
+  const isEditing = Boolean(initialTransaction);
+
   const [type, setType] = useState<TransactionType>("expense");
   const [amount, setAmount] = useState("");
   const [accountId, setAccountId] = useState(accounts[0]?.id ?? "");
@@ -60,9 +51,35 @@ export function TransactionForm({
     }
   }, [accounts, accountId]);
 
+  useEffect(() => {
+    if (!initialTransaction) {
+      return;
+    }
+
+    setType(initialTransaction.type);
+    setAmount(String(initialTransaction.amountCents / 100));
+    setAccountId(initialTransaction.accountId);
+    setTransferAccountId(initialTransaction.transferAccountId ?? "");
+    setCategoryId(initialTransaction.categoryId ?? "");
+    setMerchant(initialTransaction.merchant ?? "");
+    setTransactionDate(initialTransaction.transactionDate);
+    setNotes(initialTransaction.notes ?? "");
+  }, [initialTransaction]);
+
   const availableCategories = useMemo(() => {
     return categories.filter((category) => category.type === type);
   }, [categories, type]);
+
+  function resetForm() {
+    setType("expense");
+    setAmount("");
+    setAccountId(accounts[0]?.id ?? "");
+    setTransferAccountId("");
+    setCategoryId("");
+    setMerchant("");
+    setTransactionDate(getTodayDate());
+    setNotes("");
+  }
 
   function handleTypeChange(nextType: TransactionType) {
     setType(nextType);
@@ -89,8 +106,8 @@ export function TransactionForm({
       return;
     }
 
-    const newTransaction: Transaction = {
-      id: crypto.randomUUID(),
+    const submittedTransaction: Transaction = {
+      id: initialTransaction?.id ?? crypto.randomUUID(),
       type,
       amountCents,
       accountId,
@@ -101,17 +118,14 @@ export function TransactionForm({
         (type === "transfer" ? "Account Transfer" : "Manual Transaction"),
       transactionDate,
       notes: notes.trim() || undefined,
-      createdAt: new Date().toISOString(),
+      createdAt: initialTransaction?.createdAt ?? new Date().toISOString(),
     };
 
-    onCreateTransaction(newTransaction);
+    onSubmitTransaction(submittedTransaction);
 
-    setAmount("");
-    setCategoryId("");
-    setTransferAccountId("");
-    setMerchant("");
-    setNotes("");
-    setTransactionDate(getTodayDate());
+    if (!isEditing) {
+      resetForm();
+    }
   }
 
   return (
@@ -120,12 +134,18 @@ export function TransactionForm({
       className="rounded-[2rem] border border-white/70 bg-white/80 p-6 shadow-xl shadow-slate-200/70 backdrop-blur"
     >
       <div>
-        <p className="text-sm font-semibold text-blue-600">New Transaction</p>
+        <p className="text-sm font-semibold text-blue-600">
+          {isEditing ? "Edit Transaction" : "New Transaction"}
+        </p>
+
         <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">
-          Add money movement
+          {isEditing ? "Update money movement" : "Add money movement"}
         </h2>
+
         <p className="mt-2 text-sm leading-6 text-slate-500">
-          Add income, expenses, or transfers between your manual accounts.
+          {isEditing
+            ? "Update the transaction and CashPilot will adjust balances safely."
+            : "Add income, expenses, or transfers between your manual accounts."}
         </p>
       </div>
 
@@ -168,6 +188,7 @@ export function TransactionForm({
           <label className="text-sm font-medium text-slate-700">
             {type === "transfer" ? "From account" : "Account"}
           </label>
+
           <select
             value={accountId}
             onChange={(event) => setAccountId(event.target.value)}
@@ -186,6 +207,7 @@ export function TransactionForm({
             <label className="text-sm font-medium text-slate-700">
               To account
             </label>
+
             <select
               value={transferAccountId}
               onChange={(event) => setTransferAccountId(event.target.value)}
@@ -208,6 +230,7 @@ export function TransactionForm({
             <label className="text-sm font-medium text-slate-700">
               Category
             </label>
+
             <select
               value={categoryId}
               onChange={(event) => setCategoryId(event.target.value)}
@@ -234,6 +257,7 @@ export function TransactionForm({
                 ? "Merchant"
                 : "Transfer name"}
           </label>
+
           <input
             value={merchant}
             onChange={(event) => setMerchant(event.target.value)}
@@ -250,6 +274,7 @@ export function TransactionForm({
 
         <div>
           <label className="text-sm font-medium text-slate-700">Date</label>
+
           <input
             type="date"
             value={transactionDate}
@@ -260,6 +285,7 @@ export function TransactionForm({
 
         <div>
           <label className="text-sm font-medium text-slate-700">Notes</label>
+
           <textarea
             value={notes}
             onChange={(event) => setNotes(event.target.value)}
@@ -270,14 +296,26 @@ export function TransactionForm({
         </div>
       </div>
 
-      <button
-        type="submit"
-        disabled={accounts.length === 0}
-        className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-slate-300 transition hover:-translate-y-0.5 hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
-      >
-        <Plus size={18} />
-        Add transaction
-      </button>
+      <div className="mt-6 space-y-3">
+        <button
+          type="submit"
+          disabled={accounts.length === 0}
+          className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-slate-300 transition hover:-translate-y-0.5 hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {isEditing ? <Save size={18} /> : <Plus size={18} />}
+          {isEditing ? "Save changes" : "Add transaction"}
+        </button>
+
+        {isEditing && onCancelEdit && (
+          <button
+            type="button"
+            onClick={onCancelEdit}
+            className="inline-flex w-full items-center justify-center rounded-2xl bg-slate-100 px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-200"
+          >
+            Cancel edit
+          </button>
+        )}
+      </div>
     </form>
   );
 }

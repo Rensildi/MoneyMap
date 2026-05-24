@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   ArrowDownRight,
   ArrowRightLeft,
@@ -8,13 +8,16 @@ import {
 import { TransactionForm } from "../components/transactions/TransactionForm";
 import { TransactionItem } from "../components/transactions/TransactionItem";
 import { Card } from "../components/ui/Card";
-import {
-  mockAccounts,
-  mockCategories,
-  mockTransactions,
-} from "../data/mockData";
+import { useAuth } from "../hooks/useAuth";
 import { formatMoney } from "../lib/formatMoney";
+import { fetchAccounts } from "../services/accountService";
+import { seedDefaultCategoriesIfNeeded } from "../services/categoryService";
+import {
+  createTransaction,
+  fetchTransactions,
+} from "../services/transactionService";
 import type { Account } from "../types/account";
+import type { Category } from "../types/category";
 import type { Transaction, TransactionType } from "../types/transaction";
 
 type FilterType = "all" | TransactionType;
@@ -39,10 +42,50 @@ const filters: { label: string; value: FilterType }[] = [
 ];
 
 export function TransactionsPage() {
-  const [accounts, setAccounts] = useState<Account[]>(mockAccounts);
-  const [transactions, setTransactions] =
-    useState<Transaction[]>(mockTransactions);
+  const { user } = useAuth();
+
+  const [accounts, setAccounts] = useState<Account[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [activeFilter, setActiveFilter] = useState<FilterType>("all");
+
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [pageError, setPageError] = useState("");
+
+  useEffect(() => {
+    async function loadData() {
+      if (!user) {
+        return;
+      }
+
+      setLoading(true);
+      setPageError("");
+
+      try {
+        const [savedAccounts, savedCategories, savedTransactions] =
+          await Promise.all([
+            fetchAccounts(user.id),
+            seedDefaultCategoriesIfNeeded(user.id),
+            fetchTransactions(user.id),
+          ]);
+
+        setAccounts(savedAccounts);
+        setCategories(savedCategories);
+        setTransactions(savedTransactions);
+      } catch (error) {
+        if (error instanceof Error) {
+          setPageError(error.message);
+        } else {
+          setPageError("Could not load transactions page data.");
+        }
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadData();
+  }, [user]);
 
   const filteredTransactions = useMemo(() => {
     return transactions
@@ -127,13 +170,41 @@ export function TransactionsPage() {
     });
   }
 
-  function handleCreateTransaction(transaction: Transaction) {
-    setTransactions((currentTransactions) => [
-      transaction,
-      ...currentTransactions,
-    ]);
+  async function handleCreateTransaction(transaction: Transaction) {
+    if (!user || saving) {
+      return;
+    }
 
-    updateAccountBalances(transaction);
+    setSaving(true);
+    setPageError("");
+
+    try {
+      const savedTransaction = await createTransaction({
+        type: transaction.type,
+        amountCents: transaction.amountCents,
+        accountId: transaction.accountId,
+        transferAccountId: transaction.transferAccountId,
+        categoryId: transaction.categoryId,
+        merchant: transaction.merchant,
+        notes: transaction.notes,
+        transactionDate: transaction.transactionDate,
+      });
+
+      setTransactions((currentTransactions) => [
+        savedTransaction,
+        ...currentTransactions,
+      ]);
+
+      updateAccountBalances(savedTransaction);
+    } catch (error) {
+      if (error instanceof Error) {
+        setPageError(error.message);
+      } else {
+        setPageError("Could not create transaction.");
+      }
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -145,11 +216,17 @@ export function TransactionsPage() {
             Money activity
           </h1>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
-            Manually add income, expenses, and transfers. Later, these will be
-            stored in Supabase and connected to your dashboard.
+            Manually add income, expenses, and transfers. These transactions are
+            now saved in Supabase.
           </p>
         </div>
       </div>
+
+      {pageError && (
+        <div className="mb-5 rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
+          {pageError}
+        </div>
+      )}
 
       <div className="mb-5 grid gap-5 md:grid-cols-3">
         <Card>
@@ -235,39 +312,59 @@ export function TransactionsPage() {
             </div>
           </Card>
 
-          <div className="space-y-3">
-            {filteredTransactions.map((transaction) => (
-              <TransactionItem
-                key={transaction.id}
-                transaction={transaction}
-                accounts={accounts}
-                categories={mockCategories}
-              />
-            ))}
+          {loading ? (
+            <div className="rounded-[2rem] border border-white/70 bg-white/80 p-10 text-center shadow-xl shadow-slate-200/70 backdrop-blur">
+              <p className="font-medium text-slate-600">
+                Loading transactions...
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {filteredTransactions.map((transaction) => (
+                <TransactionItem
+                  key={transaction.id}
+                  transaction={transaction}
+                  accounts={accounts}
+                  categories={categories}
+                />
+              ))}
 
-            {filteredTransactions.length === 0 && (
-              <div className="rounded-[2rem] border border-dashed border-slate-300 bg-white/60 p-10 text-center">
-                <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 text-slate-500">
-                  <ReceiptText size={24} />
+              {filteredTransactions.length === 0 && (
+                <div className="rounded-[2rem] border border-dashed border-slate-300 bg-white/60 p-10 text-center">
+                  <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 text-slate-500">
+                    <ReceiptText size={24} />
+                  </div>
+
+                  <p className="mt-4 font-medium text-slate-600">
+                    No transactions found.
+                  </p>
+                  <p className="mt-2 text-sm text-slate-400">
+                    Add your first transaction using the form.
+                  </p>
                 </div>
-
-                <p className="mt-4 font-medium text-slate-600">
-                  No transactions found.
-                </p>
-                <p className="mt-2 text-sm text-slate-400">
-                  Add your first transaction using the form.
-                </p>
-              </div>
-            )}
-          </div>
+              )}
+            </div>
+          )}
         </div>
 
         <div className="space-y-5">
+          {accounts.length === 0 && !loading && (
+            <div className="rounded-2xl border border-amber-100 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-700">
+              Create at least one account before adding transactions.
+            </div>
+          )}
+
           <TransactionForm
             accounts={accounts}
-            categories={mockCategories}
+            categories={categories}
             onCreateTransaction={handleCreateTransaction}
           />
+
+          {saving && (
+            <p className="rounded-2xl bg-blue-50 px-4 py-3 text-sm font-semibold text-blue-700">
+              Saving transaction...
+            </p>
+          )}
 
           <Card>
             <p className="text-sm font-medium text-slate-500">
@@ -300,6 +397,12 @@ export function TransactionsPage() {
                   </p>
                 </div>
               ))}
+
+              {accounts.length === 0 && (
+                <p className="text-sm text-slate-400">
+                  No accounts available yet.
+                </p>
+              )}
             </div>
           </Card>
         </div>

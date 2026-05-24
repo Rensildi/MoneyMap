@@ -1,4 +1,4 @@
-import { useMemo, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { ArrowDownRight, ArrowRightLeft, ArrowUpRight, Plus } from "lucide-react";
 import type { Account } from "../../types/account";
 import type { Category } from "../../types/category";
@@ -53,6 +53,12 @@ export function TransactionForm({
   const [merchant, setMerchant] = useState("");
   const [transactionDate, setTransactionDate] = useState(getTodayDate());
   const [notes, setNotes] = useState("");
+
+  useEffect(() => {
+    if (!accountId && accounts.length > 0) {
+      setAccountId(accounts[0].id);
+    }
+  }, [accounts, accountId]);
 
   const availableCategories = useMemo(() => {
     return categories.filter((category) => category.type === type);
@@ -266,7 +272,8 @@ export function TransactionForm({
 
       <button
         type="submit"
-        className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-slate-300 transition hover:-translate-y-0.5 hover:bg-slate-800"
+        disabled={accounts.length === 0}
+        className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-slate-300 transition hover:-translate-y-0.5 hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
       >
         <Plus size={18} />
         Add transaction

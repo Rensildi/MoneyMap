@@ -6,10 +6,23 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { mockSpendingByCategory } from "../../data/mockData";
 import { Card } from "../ui/Card";
 
-export function SpendingChart() {
+type SpendingChartDataItem = {
+  name: string;
+  amountCents: number;
+};
+
+type SpendingChartProps = {
+  data: SpendingChartDataItem[];
+};
+
+export function SpendingChart({ data }: SpendingChartProps) {
+  const chartData = data.map((item) => ({
+    name: item.name,
+    amount: item.amountCents / 100,
+  }));
+
   return (
     <Card>
       <div className="mb-6 flex items-center justify-between">
@@ -27,21 +40,29 @@ export function SpendingChart() {
         </span>
       </div>
 
-      <div className="h-72">
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={mockSpendingByCategory}>
-            <XAxis
-              dataKey="name"
-              tickLine={false}
-              axisLine={false}
-              fontSize={12}
-            />
-            <YAxis tickLine={false} axisLine={false} fontSize={12} />
-            <Tooltip />
-            <Bar dataKey="amount" radius={[12, 12, 0, 0]} />
-          </BarChart>
-        </ResponsiveContainer>
-      </div>
+      {chartData.length === 0 ? (
+        <div className="flex h-72 items-center justify-center rounded-[1.5rem] border border-dashed border-slate-300 bg-slate-50">
+          <p className="text-sm font-medium text-slate-400">
+            No expense data yet.
+          </p>
+        </div>
+      ) : (
+        <div className="h-72">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={chartData}>
+              <XAxis
+                dataKey="name"
+                tickLine={false}
+                axisLine={false}
+                fontSize={12}
+              />
+              <YAxis tickLine={false} axisLine={false} fontSize={12} />
+              <Tooltip formatter={(value) => [`$${value}`, "Spent"]} />
+              <Bar dataKey="amount" radius={[12, 12, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      )}
     </Card>
   );
 }

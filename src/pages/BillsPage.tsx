@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   CalendarClock,
   CheckCircle2,
@@ -8,13 +8,21 @@ import {
 import { BillCard } from "../components/bills/BillCard";
 import { BillForm } from "../components/bills/BillForm";
 import { Card } from "../components/ui/Card";
-import {
-  mockAccounts,
-  mockCategories,
-  mockRecurringBills,
-} from "../data/mockData";
+import { useAuth } from "../hooks/useAuth";
 import { formatMoney } from "../lib/formatMoney";
+import { fetchAccounts } from "../services/accountService";
+import {
+  createBill,
+  deleteBill,
+  fetchBills,
+  fetchPaidBillIdsForMonth,
+  markBillPaid,
+  markBillUnpaid,
+} from "../services/billService";
+import { seedDefaultCategoriesIfNeeded } from "../services/categoryService";
+import type { Account } from "../types/account";
 import type { Bill } from "../types/bill";
+import type { Category } from "../types/category";
 
 function getCurrentMonth() {
   return new Date().toISOString().slice(0, 7);
@@ -50,9 +58,57 @@ function getDaysUntil(date: Date) {
 }
 
 export function BillsPage() {
+  const { user } = useAuth();
+
   const [selectedMonth, setSelectedMonth] = useState(getCurrentMonth());
-  const [bills, setBills] = useState<Bill[]>(mockRecurringBills);
+  const [bills, setBills] = useState<Bill[]>([]);
+  const [accounts, setAccounts] = useState<Account[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [paidBillIds, setPaidBillIds] = useState<Set<string>>(new Set());
+
+  const [loading, setLoading] = useState(true);
+  const [savingMessage, setSavingMessage] = useState("");
+  const [pageError, setPageError] = useState("");
+
+  useEffect(() => {
+    async function loadBillsData() {
+      if (!user) {
+        return;
+      }
+
+      setLoading(true);
+      setPageError("");
+
+      try {
+        const [
+          savedAccounts,
+          savedCategories,
+          savedBills,
+          savedPaidBillIds,
+        ] = await Promise.all([
+          fetchAccounts(user.id),
+          seedDefaultCategoriesIfNeeded(user.id),
+          fetchBills(user.id),
+          fetchPaidBillIdsForMonth(user.id, selectedMonth),
+        ]);
+
+        setAccounts(savedAccounts);
+        setCategories(savedCategories);
+        setBills(savedBills);
+        setPaidBillIds(savedPaidBillIds);
+      } catch (error) {
+        if (error instanceof Error) {
+          setPageError(error.message);
+        } else {
+          setPageError("Could not load bills data.");
+        }
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadBillsData();
+  }, [user, selectedMonth]);
 
   const activeBills = useMemo(() => {
     return bills.filter((bill) => bill.isActive);
@@ -92,34 +148,110 @@ export function BillsPage() {
     }).length;
   }, [activeBills, selectedMonth, paidBillIds]);
 
-  function handleCreateBill(bill: Bill) {
-    setBills((currentBills) => [bill, ...currentBills]);
+  function showSavedMessage(message: string) {
+    setSavingMessage(message);
+
+    window.setTimeout(() => {
+      setSavingMessage("");
+    }, 2200);
   }
 
-  function handleTogglePaid(billId: string) {
-    setPaidBillIds((currentPaidBillIds) => {
-      const nextPaidBillIds = new Set(currentPaidBillIds);
+  async function handleCreateBill(bill: Bill) {
+    if (!user) {
+      return;
+    }
 
-      if (nextPaidBillIds.has(billId)) {
-        nextPaidBillIds.delete(billId);
+    setPageError("");
+
+    try {
+      const savedBill = await createBill(user.id, {
+        name: bill.name,
+        amountCents: bill.amountCents,
+        categoryId: bill.categoryId,
+        accountId: bill.accountId,
+        dueDay: bill.dueDay,
+        frequency: bill.frequency,
+      });
+
+      setBills((currentBills) => [savedBill, ...currentBills]);
+      showSavedMessage("Bill saved.");
+    } catch (error) {
+      if (error instanceof Error) {
+        setPageError(error.message);
       } else {
-        nextPaidBillIds.add(billId);
+        setPageError("Could not create bill.");
       }
-
-      return nextPaidBillIds;
-    });
+    }
   }
 
-  function handleDeleteBill(billId: string) {
-    setBills((currentBills) =>
-      currentBills.filter((bill) => bill.id !== billId),
-    );
+  async function handleTogglePaid(billId: string) {
+    if (!user) {
+      return;
+    }
 
-    setPaidBillIds((currentPaidBillIds) => {
-      const nextPaidBillIds = new Set(currentPaidBillIds);
-      nextPaidBillIds.delete(billId);
-      return nextPaidBillIds;
-    });
+    setPageError("");
+
+    const isCurrentlyPaid = paidBillIds.has(billId);
+
+    try {
+      if (isCurrentlyPaid) {
+        await markBillUnpaid(user.id, billId, selectedMonth);
+
+        setPaidBillIds((currentPaidBillIds) => {
+          const nextPaidBillIds = new Set(currentPaidBillIds);
+          nextPaidBillIds.delete(billId);
+          return nextPaidBillIds;
+        });
+
+        showSavedMessage("Bill marked unpaid.");
+      } else {
+        await markBillPaid(user.id, billId, selectedMonth);
+
+        setPaidBillIds((currentPaidBillIds) => {
+          const nextPaidBillIds = new Set(currentPaidBillIds);
+          nextPaidBillIds.add(billId);
+          return nextPaidBillIds;
+        });
+
+        showSavedMessage("Bill marked paid.");
+      }
+    } catch (error) {
+      if (error instanceof Error) {
+        setPageError(error.message);
+      } else {
+        setPageError("Could not update bill payment status.");
+      }
+    }
+  }
+
+  async function handleDeleteBill(billId: string) {
+    if (!user) {
+      return;
+    }
+
+    setPageError("");
+
+    try {
+      await deleteBill(user.id, billId);
+
+      setBills((currentBills) =>
+        currentBills.filter((bill) => bill.id !== billId),
+      );
+
+      setPaidBillIds((currentPaidBillIds) => {
+        const nextPaidBillIds = new Set(currentPaidBillIds);
+        nextPaidBillIds.delete(billId);
+        return nextPaidBillIds;
+      });
+
+      showSavedMessage("Bill deleted.");
+    } catch (error) {
+      if (error instanceof Error) {
+        setPageError(error.message);
+      } else {
+        setPageError("Could not delete bill.");
+      }
+    }
   }
 
   return (
@@ -136,7 +268,7 @@ export function BillsPage() {
 
           <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
             Track rent, phone bills, insurance, subscriptions, and other
-            recurring expenses manually.
+            recurring expenses. These bills are now saved in Supabase.
           </p>
         </div>
 
@@ -154,181 +286,189 @@ export function BillsPage() {
         </div>
       </div>
 
-      <div className="mb-5 grid gap-5 md:grid-cols-2 xl:grid-cols-4">
-        <Card>
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-slate-500">
-                Monthly Bills
-              </p>
-
-              <p className="mt-3 text-2xl font-semibold text-slate-950">
-                {formatMoney(monthlyBillsTotalCents)}
-              </p>
-            </div>
-
-            <div className="rounded-2xl bg-blue-50 p-3 text-blue-600">
-              <DollarSign size={22} />
-            </div>
-          </div>
-        </Card>
-
-        <Card>
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-slate-500">Paid</p>
-
-              <p className="mt-3 text-2xl font-semibold text-emerald-600">
-                {formatMoney(paidTotalCents)}
-              </p>
-            </div>
-
-            <div className="rounded-2xl bg-emerald-50 p-3 text-emerald-600">
-              <CheckCircle2 size={22} />
-            </div>
-          </div>
-        </Card>
-
-        <Card>
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-slate-500">Unpaid</p>
-
-              <p className="mt-3 text-2xl font-semibold text-red-600">
-                {formatMoney(unpaidTotalCents)}
-              </p>
-            </div>
-
-            <div className="rounded-2xl bg-red-50 p-3 text-red-600">
-              <TriangleAlert size={22} />
-            </div>
-          </div>
-        </Card>
-
-        <Card>
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-slate-500">Due Soon</p>
-
-              <p className="mt-3 text-2xl font-semibold text-amber-600">
-                {dueSoonBillsCount}
-              </p>
-            </div>
-
-            <div className="rounded-2xl bg-amber-50 p-3 text-amber-600">
-              <CalendarClock size={22} />
-            </div>
-          </div>
-
-          {overdueBillsCount > 0 && (
-            <p className="mt-3 text-xs font-semibold text-red-600">
-              {overdueBillsCount} overdue
-            </p>
-          )}
-        </Card>
-      </div>
-
-      <div className="grid gap-5 lg:grid-cols-[1fr_24rem]">
-        <div>
-          <Card className="mb-5">
-            <div>
-              <p className="text-sm font-medium text-slate-500">
-                Bill Calendar
-              </p>
-
-              <h2 className="mt-1 text-xl font-semibold tracking-tight text-slate-950">
-                Upcoming recurring expenses
-              </h2>
-
-              <p className="mt-2 text-sm leading-6 text-slate-500">
-                Mark bills as paid when you handle them. In the database version,
-                paid status will be saved per month.
-              </p>
-            </div>
-          </Card>
-
-          <div className="grid gap-4 xl:grid-cols-2">
-            {sortedBills.map((bill) => {
-              const category = mockCategories.find(
-                (item) => item.id === bill.categoryId,
-              );
-
-              const account = mockAccounts.find(
-                (item) => item.id === bill.accountId,
-              );
-
-              return (
-                <BillCard
-                  key={bill.id}
-                  bill={bill}
-                  category={category}
-                  account={account}
-                  selectedMonth={selectedMonth}
-                  isPaid={paidBillIds.has(bill.id)}
-                  onTogglePaid={handleTogglePaid}
-                  onDeleteBill={handleDeleteBill}
-                />
-              );
-            })}
-          </div>
-
-          {sortedBills.length === 0 && (
-            <div className="rounded-[2rem] border border-dashed border-slate-300 bg-white/60 p-10 text-center">
-              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 text-slate-500">
-                <CalendarClock size={24} />
-              </div>
-
-              <p className="mt-4 font-medium text-slate-600">
-                No recurring bills yet.
-              </p>
-
-              <p className="mt-2 text-sm text-slate-400">
-                Add rent, subscriptions, insurance, or other repeating expenses.
-              </p>
-            </div>
-          )}
+      {pageError && (
+        <div className="mb-5 rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
+          {pageError}
         </div>
+      )}
 
-        <div className="space-y-5">
-          <BillForm
-            accounts={mockAccounts}
-            categories={mockCategories}
-            onCreateBill={handleCreateBill}
-          />
-
-          <Card>
-            <p className="text-sm font-medium text-slate-500">
-              Suggested bills to track
-            </p>
-
-            <div className="mt-4 space-y-2 text-sm text-slate-600">
-              <div className="rounded-2xl bg-slate-50 px-4 py-3">
-                Rent or mortgage
-              </div>
-
-              <div className="rounded-2xl bg-slate-50 px-4 py-3">
-                Phone bill
-              </div>
-
-              <div className="rounded-2xl bg-slate-50 px-4 py-3">
-                Car payment
-              </div>
-
-              <div className="rounded-2xl bg-slate-50 px-4 py-3">
-                Insurance
-              </div>
-
-              <div className="rounded-2xl bg-slate-50 px-4 py-3">
-                Streaming subscriptions
-              </div>
-
-              <div className="rounded-2xl bg-slate-50 px-4 py-3">
-                Gym membership
-              </div>
-            </div>
-          </Card>
+      {savingMessage && (
+        <div className="mb-5 rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700">
+          {savingMessage}
         </div>
-      </div>
+      )}
+
+      {loading ? (
+        <div className="rounded-[2rem] border border-white/70 bg-white/80 p-10 text-center shadow-xl shadow-slate-200/70 backdrop-blur">
+          <p className="font-medium text-slate-600">Loading bills...</p>
+        </div>
+      ) : (
+        <>
+          <div className="mb-5 grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+            <Card>
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-slate-500">
+                    Monthly Bills
+                  </p>
+
+                  <p className="mt-3 text-2xl font-semibold text-slate-950">
+                    {formatMoney(monthlyBillsTotalCents)}
+                  </p>
+                </div>
+
+                <div className="rounded-2xl bg-blue-50 p-3 text-blue-600">
+                  <DollarSign size={22} />
+                </div>
+              </div>
+            </Card>
+
+            <Card>
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-slate-500">Paid</p>
+
+                  <p className="mt-3 text-2xl font-semibold text-emerald-600">
+                    {formatMoney(paidTotalCents)}
+                  </p>
+                </div>
+
+                <div className="rounded-2xl bg-emerald-50 p-3 text-emerald-600">
+                  <CheckCircle2 size={22} />
+                </div>
+              </div>
+            </Card>
+
+            <Card>
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-slate-500">Unpaid</p>
+
+                  <p className="mt-3 text-2xl font-semibold text-red-600">
+                    {formatMoney(unpaidTotalCents)}
+                  </p>
+                </div>
+
+                <div className="rounded-2xl bg-red-50 p-3 text-red-600">
+                  <TriangleAlert size={22} />
+                </div>
+              </div>
+            </Card>
+
+            <Card>
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-slate-500">
+                    Due Soon
+                  </p>
+
+                  <p className="mt-3 text-2xl font-semibold text-amber-600">
+                    {dueSoonBillsCount}
+                  </p>
+                </div>
+
+                <div className="rounded-2xl bg-amber-50 p-3 text-amber-600">
+                  <CalendarClock size={22} />
+                </div>
+              </div>
+
+              {overdueBillsCount > 0 && (
+                <p className="mt-3 text-xs font-semibold text-red-600">
+                  {overdueBillsCount} overdue
+                </p>
+              )}
+            </Card>
+          </div>
+
+          <div className="grid gap-5 lg:grid-cols-[1fr_24rem]">
+            <div>
+              <Card className="mb-5">
+                <div>
+                  <p className="text-sm font-medium text-slate-500">
+                    Bill Calendar
+                  </p>
+
+                  <h2 className="mt-1 text-xl font-semibold tracking-tight text-slate-950">
+                    Upcoming recurring expenses
+                  </h2>
+
+                  <p className="mt-2 text-sm leading-6 text-slate-500">
+                    Mark bills as paid for the selected month. Paid status is
+                    saved in the bill_payments table.
+                  </p>
+                </div>
+              </Card>
+
+              <div className="grid gap-4 xl:grid-cols-2">
+                {sortedBills.map((bill) => {
+                  const category = categories.find(
+                    (item) => item.id === bill.categoryId,
+                  );
+
+                  const account = accounts.find(
+                    (item) => item.id === bill.accountId,
+                  );
+
+                  return (
+                    <BillCard
+                      key={bill.id}
+                      bill={bill}
+                      category={category}
+                      account={account}
+                      selectedMonth={selectedMonth}
+                      isPaid={paidBillIds.has(bill.id)}
+                      onTogglePaid={handleTogglePaid}
+                      onDeleteBill={handleDeleteBill}
+                    />
+                  );
+                })}
+              </div>
+
+              {sortedBills.length === 0 && (
+                <div className="rounded-[2rem] border border-dashed border-slate-300 bg-white/60 p-10 text-center">
+                  <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 text-slate-500">
+                    <CalendarClock size={24} />
+                  </div>
+
+                  <p className="mt-4 font-medium text-slate-600">
+                    No recurring bills yet.
+                  </p>
+
+                  <p className="mt-2 text-sm text-slate-400">
+                    Add rent, subscriptions, insurance, or other repeating
+                    expenses.
+                  </p>
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-5">
+              {accounts.length === 0 && (
+                <div className="rounded-2xl border border-amber-100 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-700">
+                  Create at least one account before adding bills.
+                </div>
+              )}
+
+              <BillForm
+                accounts={accounts}
+                categories={categories}
+                onCreateBill={handleCreateBill}
+              />
+
+              <Card>
+                <p className="text-sm font-medium text-slate-500">
+                  Supabase status
+                </p>
+
+                <p className="mt-3 text-sm leading-6 text-slate-500">
+                  Bills are saved in the bills table. Paid/unpaid status is
+                  saved per month in the bill_payments table.
+                </p>
+              </Card>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }

@@ -5,6 +5,7 @@ import {
   LayoutDashboard,
   ReceiptText,
   Settings,
+  Target,
   WalletCards,
 } from "lucide-react";
 import { NavLink, Outlet } from "react-router-dom";
@@ -34,6 +35,11 @@ const navItems = [
     label: "Bills",
     path: "/bills",
     icon: CalendarDays,
+  },
+  {
+    label: "Goals",
+    path: "/goals",
+    icon: Target,
   },
   {
     label: "Reports",
@@ -97,7 +103,7 @@ export function AppShell() {
       </main>
 
       <nav className="fixed bottom-4 left-1/2 z-50 flex w-[calc(100%-2rem)] max-w-md -translate-x-1/2 items-center justify-between rounded-[1.75rem] border border-white/70 bg-white/90 px-4 py-3 shadow-2xl shadow-slate-300/70 backdrop-blur-xl lg:hidden">
-        {navItems.slice(0, 5).map((item) => {
+        {navItems.slice(0, 6).map((item) => {
           const Icon = item.icon;
 
           return (

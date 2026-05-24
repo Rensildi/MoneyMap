@@ -6,6 +6,7 @@ import { AccountsPage } from "../pages/AccountsPage";
 import { TransactionsPage } from "../pages/TransactionsPage";
 import { BudgetPage } from "../pages/BudgetPage";
 import { BillsPage } from "../pages/BillsPage";
+import { GoalsPage } from "../pages/GoalsPage";
 
 export default function App() {
   return (
@@ -17,6 +18,7 @@ export default function App() {
           <Route path="/transactions" element={<TransactionsPage />} />
           <Route path="/budget" element={<BudgetPage />} />
           <Route path="/bills" element={<BillsPage />} />
+          <Route path="/goals" element={<GoalsPage />} />
           <Route
             path="/reports"
             element={

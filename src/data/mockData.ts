@@ -3,6 +3,7 @@ import type { MonthlyBudget } from "../types/budget";
 import type { Category } from "../types/category";
 import type { Transaction } from "../types/transaction";
 import type { Bill } from "../types/bill";
+import type { Goal } from "../types/goal";
 
 export const mockAccounts: Account[] = [
   {
@@ -278,6 +279,36 @@ export const mockRecurringBills: Bill[] = [
     dueDay: 25,
     frequency: "monthly",
     isActive: true,
+    createdAt: "2026-05-01T10:00:00Z",
+  },
+];
+
+export const mockGoals: Goal[] = [
+  {
+    id: "goal-emergency",
+    name: "Emergency Fund",
+    type: "emergency_fund",
+    targetCents: 500000,
+    currentCents: 125000,
+    targetDate: "2026-12-31",
+    createdAt: "2026-05-01T10:00:00Z",
+  },
+  {
+    id: "goal-vacation",
+    name: "Summer Vacation",
+    type: "vacation",
+    targetCents: 200000,
+    currentCents: 60000,
+    targetDate: "2026-08-15",
+    createdAt: "2026-05-01T10:00:00Z",
+  },
+  {
+    id: "goal-credit-card",
+    name: "Pay Off Credit Card",
+    type: "debt_payoff",
+    targetCents: 350000,
+    currentCents: 90000,
+    targetDate: "2026-11-01",
     createdAt: "2026-05-01T10:00:00Z",
   },
 ];

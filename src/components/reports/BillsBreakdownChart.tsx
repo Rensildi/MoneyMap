@@ -8,12 +8,14 @@ import {
 } from "recharts";
 import type { Bill } from "../../types/bill";
 import { ChartCard } from "./ChartCard";
+import { useMoney } from "../../hooks/useMoney";
 
 type BillsBreakdownChartProps = {
   bills: Bill[];
 };
 
 export function BillsBreakdownChart({ bills }: BillsBreakdownChartProps) {
+  const { money } = useMoney();
   const data = bills
     .filter((bill) => bill.isActive)
     .map((bill) => ({
@@ -37,7 +39,9 @@ export function BillsBreakdownChart({ bills }: BillsBreakdownChartProps) {
               fontSize={12}
             />
             <YAxis tickLine={false} axisLine={false} fontSize={12} />
-            <Tooltip formatter={(value) => [`$${value}`, "Amount"]} />
+            <Tooltip
+              formatter={(value) => [money(Number(value) * 100), "Amount"]}
+            />
             <Bar dataKey="amount" radius={[12, 12, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>

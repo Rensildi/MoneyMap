@@ -14,10 +14,11 @@ import {
 import { Card } from "../components/ui/Card";
 import { useAuth } from "../hooks/useAuth";
 import { dollarsToCents, formatMoney } from "../lib/formatMoney";
-import {
-  fetchProfileSettings,
-  updateProfileSettings,
-} from "../services/profileService";
+// import {
+//   fetchProfileSettings,
+//   updateProfileSettings,
+// } from "../services/profileService";
+import { useProfile } from "../hooks/useProfile";
 import type {
   AppSettings,
   CurrencyCode,
@@ -92,12 +93,19 @@ const themeOptions: {
 export function SettingsPage() {
   const { user } = useAuth();
 
+  const {
+    settings: profileSettings,
+    loading: profileLoading,
+    error: profileError,
+    saveProfile,
+  } = useProfile();
+
   const [settings, setSettings] = useState<AppSettings>(fallbackSettings);
   const [freeLimitInput, setFreeLimitInput] = useState(
     String(fallbackSettings.defaultFreeSpendingLimitCents / 100),
   );
 
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(profileLoading);
   const [saving, setSaving] = useState(false);
 
   const [savedMessage, setSavedMessage] = useState("");
@@ -108,34 +116,19 @@ export function SettingsPage() {
   }, [settings.currency]);
 
   useEffect(() => {
-    async function loadSettings() {
-      if (!user) {
-        return;
-      }
+    setLoading(profileLoading);
 
-      setLoading(true);
-      setPageError("");
-
-      try {
-        const savedSettings = await fetchProfileSettings(user.id, user.email);
-
-        setSettings(savedSettings);
-        setFreeLimitInput(
-          String(savedSettings.defaultFreeSpendingLimitCents / 100),
-        );
-      } catch (error) {
-        if (error instanceof Error) {
-          setPageError(error.message);
-        } else {
-          setPageError("Could not load profile settings.");
-        }
-      } finally {
-        setLoading(false);
-      }
+    if (!profileLoading) {
+      setSettings(profileSettings);
+      setFreeLimitInput(
+        String(profileSettings.defaultFreeSpendingLimitCents / 100),
+      );
     }
 
-    loadSettings();
-  }, [user]);
+    if (profileError) {
+      setPageError(profileError);
+    }
+  }, [profileSettings, profileLoading, profileError]);
 
   useEffect(() => {
     document.documentElement.dataset.theme = settings.theme;
@@ -173,7 +166,7 @@ export function SettingsPage() {
         defaultFreeSpendingLimitCents: dollarsToCents(freeLimitInput),
       };
 
-      const savedSettings = await updateProfileSettings(user.id, nextSettings);
+      const savedSettings = await saveProfile(nextSettings);
 
       setSettings(savedSettings);
       setFreeLimitInput(
@@ -214,7 +207,7 @@ export function SettingsPage() {
         email: user.email ?? "",
       };
 
-      const savedSettings = await updateProfileSettings(user.id, resetValues);
+      const savedSettings = await saveProfile(resetValues);
 
       setSettings(savedSettings);
       setFreeLimitInput(

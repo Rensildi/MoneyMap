@@ -9,7 +9,8 @@ import { BillCard } from "../components/bills/BillCard";
 import { BillForm } from "../components/bills/BillForm";
 import { Card } from "../components/ui/Card";
 import { useAuth } from "../hooks/useAuth";
-import { formatMoney } from "../lib/formatMoney";
+// import { formatMoney } from "../lib/formatMoney";
+import { useMoney } from "../hooks/useMoney";
 import { fetchAccounts } from "../services/accountService";
 import {
   createBill,
@@ -60,6 +61,7 @@ function getDaysUntil(date: Date) {
 
 export function BillsPage() {
   const { user } = useAuth();
+  const { money } = useMoney();
 
   const [selectedMonth, setSelectedMonth] = useState(getCurrentMonth());
   const [bills, setBills] = useState<Bill[]>([]);
@@ -343,7 +345,7 @@ export function BillsPage() {
                   </p>
 
                   <p className="mt-3 text-2xl font-semibold text-slate-950">
-                    {formatMoney(monthlyBillsTotalCents)}
+                    {money(monthlyBillsTotalCents)}
                   </p>
                 </div>
 
@@ -359,7 +361,7 @@ export function BillsPage() {
                   <p className="text-sm font-medium text-slate-500">Paid</p>
 
                   <p className="mt-3 text-2xl font-semibold text-emerald-600">
-                    {formatMoney(paidTotalCents)}
+                    {money(paidTotalCents)}
                   </p>
                 </div>
 
@@ -375,7 +377,7 @@ export function BillsPage() {
                   <p className="text-sm font-medium text-slate-500">Unpaid</p>
 
                   <p className="mt-3 text-2xl font-semibold text-red-600">
-                    {formatMoney(unpaidTotalCents)}
+                    {money(unpaidTotalCents)}
                   </p>
                 </div>
 

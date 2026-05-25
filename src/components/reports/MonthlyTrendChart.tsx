@@ -7,6 +7,7 @@ import {
   YAxis,
 } from "recharts";
 import { ChartCard } from "./ChartCard";
+import { useMoney } from "../../hooks/useMoney";
 
 type MonthlyTrendItem = {
   month: string;
@@ -20,6 +21,7 @@ type MonthlyTrendChartProps = {
 };
 
 export function MonthlyTrendChart({ data }: MonthlyTrendChartProps) {
+  const { money } = useMoney();
   const chartData = data.map((item) => ({
     month: item.month,
     income: item.incomeCents / 100,
@@ -42,7 +44,9 @@ export function MonthlyTrendChart({ data }: MonthlyTrendChartProps) {
               fontSize={12}
             />
             <YAxis tickLine={false} axisLine={false} fontSize={12} />
-            <Tooltip />
+            <Tooltip
+              formatter={(value) => [money(Number(value) * 100), "Amount"]}
+            />
             <Line
               type="monotone"
               dataKey="income"

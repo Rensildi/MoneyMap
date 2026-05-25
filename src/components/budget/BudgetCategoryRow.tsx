@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
 import { CheckCircle2, TriangleAlert } from "lucide-react";
 import type { Category } from "../../types/category";
-import { dollarsToCents, formatMoney } from "../../lib/formatMoney";
+// import { dollarsToCents, formatMoney } from "../../lib/formatMoney";
+import { dollarsToCents } from "../../lib/formatMoney";
+import { useMoney } from "../../hooks/useMoney";
 import { ProgressBar } from "../ui/ProgressBar";
 
 type BudgetCategoryRowProps = {
@@ -25,6 +27,7 @@ export function BudgetCategoryRow({
     setBudgetInput(String(budgetedCents / 100));
   }, [budgetedCents]);
 
+  const { money } = useMoney();
   const remainingCents = budgetedCents - spentCents;
   const percentUsed =
     budgetedCents > 0 ? Math.round((spentCents / budgetedCents) * 100) : 0;
@@ -76,7 +79,7 @@ export function BudgetCategoryRow({
           <div className="mt-4">
             <div className="mb-2 flex items-center justify-between text-sm">
               <span className="text-slate-500">
-                {formatMoney(spentCents)} spent
+                {money(spentCents)} spent
               </span>
               <span className={isOverBudget ? "text-red-600" : "text-slate-500"}>
                 {percentUsed}%
@@ -90,14 +93,14 @@ export function BudgetCategoryRow({
             <span className="text-slate-500">
               Budget:{" "}
               <strong className="font-semibold text-slate-800">
-                {formatMoney(budgetedCents)}
+                {money(budgetedCents)}
               </strong>
             </span>
 
             <span className={remainingCents < 0 ? "text-red-600" : "text-slate-500"}>
               Remaining:{" "}
               <strong className="font-semibold">
-                {formatMoney(remainingCents)}
+                {money(remainingCents)}
               </strong>
             </span>
           </div>

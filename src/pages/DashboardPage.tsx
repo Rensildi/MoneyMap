@@ -5,7 +5,8 @@ import { FreeSpendingCard } from "../components/dashboard/FreeSpendingCard";
 import { SpendingChart } from "../components/dashboard/SpendingChart";
 import { Card } from "../components/ui/Card";
 import { useAuth } from "../hooks/useAuth";
-import { formatMoney } from "../lib/formatMoney";
+// import { formatMoney } from "../lib/formatMoney";
+import { useMoney } from "../hooks/useMoney";
 import { fetchAccounts } from "../services/accountService";
 import { fetchBills } from "../services/billService";
 import { fetchFreeSpendingLimit } from "../services/budgetService";
@@ -49,6 +50,7 @@ function getDisplayName(email?: string, fullName?: string) {
 
 export function DashboardPage() {
   const { user } = useAuth();
+  const { money } = useMoney();
 
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -243,7 +245,7 @@ export function DashboardPage() {
                         : "text-slate-950"
                     }`}
                   >
-                    {formatMoney(totalBalanceCents)}
+                    {money(totalBalanceCents)}
                   </h2>
                   <p className="mt-2 text-sm text-slate-500">
                     Across {accounts.length} manual account
@@ -275,7 +277,7 @@ export function DashboardPage() {
                           : "text-slate-950"
                       }`}
                     >
-                      {formatMoney(account.balanceCents)}
+                      {money(account.balanceCents)}
                     </p>
                   </div>
                 ))}
@@ -307,7 +309,7 @@ export function DashboardPage() {
                     Income This Month
                   </p>
                   <p className="mt-3 text-2xl font-semibold text-slate-950">
-                    {formatMoney(incomeThisMonthCents)}
+                    {money(incomeThisMonthCents)}
                   </p>
                 </div>
 
@@ -324,7 +326,7 @@ export function DashboardPage() {
                     Expenses This Month
                   </p>
                   <p className="mt-3 text-2xl font-semibold text-red-600">
-                    {formatMoney(expensesThisMonthCents)}
+                    {money(expensesThisMonthCents)}
                   </p>
                 </div>
 
@@ -355,7 +357,7 @@ export function DashboardPage() {
                     </div>
 
                     <p className="text-sm font-semibold text-slate-950">
-                      {formatMoney(bill.amountCents)}
+                      {money(bill.amountCents)}
                     </p>
                   </div>
                 ))}

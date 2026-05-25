@@ -4,7 +4,8 @@ import { BudgetCategoryRow } from "../components/budget/BudgetCategoryRow";
 import { FreeSpendingSettings } from "../components/budget/FreeSpendingSettings";
 import { Card } from "../components/ui/Card";
 import { useAuth } from "../hooks/useAuth";
-import { formatMoney } from "../lib/formatMoney";
+// import { formatMoney } from "../lib/formatMoney";
+import { useMoney } from "../hooks/useMoney";
 import {
   fetchFreeSpendingLimit,
   fetchMonthlyBudgets,
@@ -26,6 +27,7 @@ function getCurrentMonth() {
 
 export function BudgetPage() {
   const { user } = useAuth();
+  const { money } = useMoney();
 
   const [selectedMonth, setSelectedMonth] = useState(getCurrentMonth());
   const [categories, setCategories] = useState<Category[]>([]);
@@ -314,7 +316,7 @@ export function BudgetPage() {
                     Total Budgeted
                   </p>
                   <p className="mt-3 text-2xl font-semibold text-slate-950">
-                    {formatMoney(totalBudgetedCents)}
+                    {money(totalBudgetedCents)}
                   </p>
                 </div>
 
@@ -331,7 +333,7 @@ export function BudgetPage() {
                     Total Spent
                   </p>
                   <p className="mt-3 text-2xl font-semibold text-red-600">
-                    {formatMoney(totalSpentCents)}
+                    {money(totalSpentCents)}
                   </p>
                 </div>
 
@@ -354,7 +356,7 @@ export function BudgetPage() {
                         : "text-emerald-600"
                     }`}
                   >
-                    {formatMoney(remainingBudgetCents)}
+                    {money(remainingBudgetCents)}
                   </p>
                 </div>
 
@@ -371,7 +373,7 @@ export function BudgetPage() {
                     Free Spending Used
                   </p>
                   <p className="mt-3 text-2xl font-semibold text-amber-600">
-                    {formatMoney(freeSpendingUsedCents)}
+                    {money(freeSpendingUsedCents)}
                   </p>
                 </div>
 

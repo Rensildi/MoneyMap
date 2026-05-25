@@ -10,7 +10,9 @@ import {
   WalletCards,
 } from "lucide-react";
 import type { Goal, GoalType } from "../../types/goal";
-import { dollarsToCents, formatMoney } from "../../lib/formatMoney";
+// import { dollarsToCents, formatMoney } from "../../lib/formatMoney";
+import { dollarsToCents } from "../../lib/formatMoney";
+import { useMoney } from "../../hooks/useMoney";
 import { ProgressBar } from "../ui/ProgressBar";
 
 type GoalCardProps = {
@@ -56,6 +58,7 @@ export function GoalCard({
   onAddProgress,
   onDeleteGoal,
 }: GoalCardProps) {
+  const { money } = useMoney();
   const [progressInput, setProgressInput] = useState("");
 
   const Icon = goalTypeIcons[goal.type];
@@ -153,7 +156,7 @@ export function GoalCard({
           <span className="text-slate-500">
             {isDebtGoal ? "Paid off" : "Saved"}:{" "}
             <strong className="font-semibold text-slate-800">
-              {formatMoney(goal.currentCents)}
+              {money(goal.currentCents)}
             </strong>
           </span>
 
@@ -168,7 +171,7 @@ export function GoalCard({
               Target
             </p>
             <p className="mt-1 text-lg font-semibold text-slate-950">
-              {formatMoney(goal.targetCents)}
+              {money(goal.targetCents)}
             </p>
           </div>
 
@@ -177,7 +180,7 @@ export function GoalCard({
               Remaining
             </p>
             <p className="mt-1 text-lg font-semibold text-slate-950">
-              {formatMoney(remainingCents)}
+              {money(remainingCents)}
             </p>
           </div>
         </div>

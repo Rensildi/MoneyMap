@@ -3,7 +3,8 @@ import { AccountCard } from "../components/accounts/AccountCard";
 import { AccountForm } from "../components/accounts/AccountForm";
 import { Card } from "../components/ui/Card";
 import { useAuth } from "../hooks/useAuth";
-import { formatMoney } from "../lib/formatMoney";
+// import { formatMoney } from "../lib/formatMoney";
+import { useMoney } from "../hooks/useMoney";
 import {
   createAccount,
   deleteAccount,
@@ -14,6 +15,7 @@ import type { Account } from "../types/account";
 
 export function AccountsPage() {
   const { user } = useAuth();
+  const { money } = useMoney();
 
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [loading, setLoading] = useState(true);
@@ -161,14 +163,14 @@ export function AccountsPage() {
         <Card>
           <p className="text-sm font-medium text-slate-500">Total Assets</p>
           <p className="mt-3 text-2xl font-semibold text-slate-950">
-            {formatMoney(totalAssetsCents)}
+            {money(totalAssetsCents)}
           </p>
         </Card>
 
         <Card>
           <p className="text-sm font-medium text-slate-500">Total Debt</p>
           <p className="mt-3 text-2xl font-semibold text-red-600">
-            {formatMoney(totalDebtCents)}
+            {money(totalDebtCents)}
           </p>
         </Card>
 
@@ -179,7 +181,7 @@ export function AccountsPage() {
               netWorthCents < 0 ? "text-red-600" : "text-slate-950"
             }`}
           >
-            {formatMoney(netWorthCents)}
+            {money(netWorthCents)}
           </p>
         </Card>
       </div>

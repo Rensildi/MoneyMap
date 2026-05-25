@@ -7,6 +7,7 @@ import {
   YAxis,
 } from "recharts";
 import { ChartCard } from "./ChartCard";
+import { useMoney } from "../../hooks/useMoney";
 
 type IncomeExpenseChartProps = {
   incomeCents: number;
@@ -17,6 +18,7 @@ export function IncomeExpenseChart({
   incomeCents,
   expensesCents,
 }: IncomeExpenseChartProps) {
+  const { money } = useMoney();
   const data = [
     {
       name: "Income",
@@ -43,7 +45,9 @@ export function IncomeExpenseChart({
               fontSize={12}
             />
             <YAxis tickLine={false} axisLine={false} fontSize={12} />
-            <Tooltip formatter={(value) => [`$${value}`, "Amount"]} />
+            <Tooltip
+              formatter={(value) => [money(Number(value) * 100), "Amount"]}
+            />
             <Bar dataKey="amount" radius={[12, 12, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>

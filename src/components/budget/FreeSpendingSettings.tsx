@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
 import { ShieldCheck, TriangleAlert } from "lucide-react";
 import type { Category } from "../../types/category";
-import { dollarsToCents, formatMoney } from "../../lib/formatMoney";
+// import { dollarsToCents, formatMoney } from "../../lib/formatMoney";
+import { dollarsToCents } from "../../lib/formatMoney";
+import { useMoney } from "../../hooks/useMoney";
 import { ProgressBar } from "../ui/ProgressBar";
 
 type FreeSpendingSettingsProps = {
@@ -25,6 +27,7 @@ export function FreeSpendingSettings({
     setLimitInput(String(limitCents / 100));
   }, [limitCents]);
 
+  const { money } = useMoney();
   const remainingCents = limitCents - usedCents;
   const percentUsed =
     limitCents > 0 ? Math.round((usedCents / limitCents) * 100) : 0;
@@ -125,14 +128,14 @@ export function FreeSpendingSettings({
             </div>
 
             <p className="mt-2 text-sm opacity-80">
-              {formatMoney(usedCents)} used from {formatMoney(limitCents)}.
+              {money(usedCents)} used from {money(limitCents)}.
             </p>
           </div>
 
           <div className="text-left sm:text-right">
             <p className="text-sm opacity-80">Remaining</p>
             <p className="mt-1 text-2xl font-semibold">
-              {formatMoney(remainingCents)}
+              {money(remainingCents)}
             </p>
           </div>
         </div>

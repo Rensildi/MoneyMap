@@ -1,5 +1,6 @@
 import { ArrowDownRight, ShieldCheck, TriangleAlert } from "lucide-react";
-import { formatMoney } from "../../lib/formatMoney";
+// import { formatMoney } from "../../lib/formatMoney";
+import { useMoney } from "../../hooks/useMoney";
 import { ProgressBar } from "../ui/ProgressBar";
 
 type FreeSpendingCardProps = {
@@ -11,6 +12,7 @@ export function FreeSpendingCard({
   limitCents,
   usedCents,
 }: FreeSpendingCardProps) {
+  const { money } = useMoney();
   const remainingCents = limitCents - usedCents;
   const percentageUsed = limitCents > 0 ? (usedCents / limitCents) * 100 : 0;
 
@@ -46,7 +48,7 @@ export function FreeSpendingCard({
           </p>
 
           <h2 className="mt-3 text-4xl font-semibold tracking-tight">
-            {formatMoney(remainingCents)}
+            {money(remainingCents)}
           </h2>
 
           <p
@@ -54,7 +56,7 @@ export function FreeSpendingCard({
               isOverLimit ? "text-red-700" : "text-slate-300"
             }`}
           >
-            left from {formatMoney(limitCents)} this month
+            left from {money(limitCents)} this month
           </p>
         </div>
 
@@ -70,7 +72,7 @@ export function FreeSpendingCard({
       <div className="relative mt-8">
         <div className="mb-3 flex items-center justify-between text-sm">
           <span className={isOverLimit ? "text-red-700" : "text-slate-300"}>
-            {formatMoney(usedCents)} used
+            {money(usedCents)} used
           </span>
           <span className={isOverLimit ? "text-red-700" : "text-slate-300"}>
             {Math.round(percentageUsed)}%

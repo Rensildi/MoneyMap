@@ -8,6 +8,7 @@ import {
 } from "recharts";
 import type { Category } from "../../types/category";
 import type { Transaction } from "../../types/transaction";
+import { useMoney } from "../../hooks/useMoney";
 import { ChartCard } from "./ChartCard";
 
 type SpendingByCategoryChartProps = {
@@ -19,6 +20,7 @@ export function SpendingByCategoryChart({
   transactions,
   categories,
 }: SpendingByCategoryChartProps) {
+  const { money } = useMoney();
   const data = categories
     .filter((category) => category.type === "expense")
     .map((category) => {
@@ -52,7 +54,9 @@ export function SpendingByCategoryChart({
               fontSize={12}
             />
             <YAxis tickLine={false} axisLine={false} fontSize={12} />
-            <Tooltip formatter={(value) => [`$${value}`, "Spent"]} />
+            <Tooltip
+              formatter={(value) => [money(Number(value) * 100), "Spent"]}
+            />
             <Bar dataKey="amount" radius={[12, 12, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>

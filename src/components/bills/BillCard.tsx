@@ -9,7 +9,8 @@ import {
 import type { Account } from "../../types/account";
 import type { Bill } from "../../types/bill";
 import type { Category } from "../../types/category";
-import { formatMoney } from "../../lib/formatMoney";
+// import { formatMoney } from "../../lib/formatMoney";
+import { useMoney } from "../../hooks/useMoney";
 
 type BillCardProps = {
   bill: Bill;
@@ -69,6 +70,7 @@ export function BillCard({
   onTogglePaid,
   onDeleteBill,
 }: BillCardProps) {
+  const { money } = useMoney();
   const billDate = getBillDate(selectedMonth, bill.dueDay);
   const daysUntil = getDaysUntil(billDate);
 
@@ -186,7 +188,7 @@ export function BillCard({
         <div>
           <p className="text-sm font-medium text-slate-500">Amount</p>
           <p className="mt-1 text-3xl font-semibold tracking-tight text-slate-950">
-            {formatMoney(bill.amountCents)}
+            {money(bill.amountCents)}
           </p>
         </div>
 

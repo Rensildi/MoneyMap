@@ -9,7 +9,8 @@ import {
   TrendingUp,
 } from "lucide-react";
 import type { Account } from "../../types/account";
-import { formatMoney } from "../../lib/formatMoney";
+// import { formatMoney } from "../../lib/formatMoney";
+import { useMoney } from "../../hooks/useMoney";
 
 type AccountCardProps = {
   account: Account;
@@ -36,6 +37,7 @@ const accountTypeIcons = {
 };
 
 export function AccountCard({ account, onEditAccount, onDeleteAccount }: AccountCardProps) {
+  const { money } = useMoney();
   const Icon = accountTypeIcons[account.type];
 
   const isDebtAccount =
@@ -115,7 +117,7 @@ export function AccountCard({ account, onEditAccount, onDeleteAccount }: Account
             account.balanceCents < 0 ? "text-red-600" : "text-slate-950"
           }`}
         >
-          {formatMoney(account.balanceCents)}
+          {money(account.balanceCents)}
         </p>
       </div>
     </div>

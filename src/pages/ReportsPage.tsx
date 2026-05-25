@@ -8,7 +8,8 @@ import { MonthlyTrendChart } from "../components/reports/MonthlyTrendChart";
 import { SpendingByCategoryChart } from "../components/reports/SpendingByCategoryChart";
 import { Card } from "../components/ui/Card";
 import { useAuth } from "../hooks/useAuth";
-import { formatMoney } from "../lib/formatMoney";
+// import { formatMoney } from "../lib/formatMoney";
+import { useMoney } from "../hooks/useMoney";
 import { fetchBills } from "../services/billService";
 import { fetchFreeSpendingLimit } from "../services/budgetService";
 import { seedDefaultCategoriesIfNeeded } from "../services/categoryService";
@@ -58,6 +59,7 @@ function getLastSixMonths() {
 
 export function ReportsPage() {
   const { user } = useAuth();
+  const { money } = useMoney();
 
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -238,7 +240,7 @@ export function ReportsPage() {
                       cashFlowCents < 0 ? "text-red-600" : "text-emerald-600"
                     }`}
                   >
-                    {formatMoney(cashFlowCents)}
+                    {money(cashFlowCents)}
                   </p>
                 </div>
 
@@ -256,7 +258,7 @@ export function ReportsPage() {
                   </p>
 
                   <p className="mt-3 text-2xl font-semibold text-red-600">
-                    {formatMoney(totalExpensesCents)}
+                    {money(totalExpensesCents)}
                   </p>
                 </div>
 
@@ -274,7 +276,7 @@ export function ReportsPage() {
                   </p>
 
                   <p className="mt-3 text-2xl font-semibold text-slate-950">
-                    {formatMoney(monthlyBillsCents)}
+                    {money(monthlyBillsCents)}
                   </p>
                 </div>
 
@@ -292,7 +294,7 @@ export function ReportsPage() {
                   </p>
 
                   <p className="mt-3 text-2xl font-semibold text-amber-600">
-                    {formatMoney(totalGoalProgressCents)}
+                    {money(totalGoalProgressCents)}
                   </p>
                 </div>
 

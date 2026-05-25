@@ -9,7 +9,8 @@ import { TransactionForm } from "../components/transactions/TransactionForm";
 import { TransactionItem } from "../components/transactions/TransactionItem";
 import { Card } from "../components/ui/Card";
 import { useAuth } from "../hooks/useAuth";
-import { formatMoney } from "../lib/formatMoney";
+// import { formatMoney } from "../lib/formatMoney";
+import { useMoney } from "../hooks/useMoney";
 import { fetchAccounts } from "../services/accountService";
 import { seedDefaultCategoriesIfNeeded } from "../services/categoryService";
 import {
@@ -45,6 +46,7 @@ const filters: { label: string; value: FilterType }[] = [
 
 export function TransactionsPage() {
   const { user } = useAuth();
+  const { money } = useMoney();
 
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -303,7 +305,7 @@ export function TransactionsPage() {
                 Total Income
               </p>
               <p className="mt-3 text-2xl font-semibold text-emerald-600">
-                {formatMoney(totalIncomeCents)}
+                {money(totalIncomeCents)}
               </p>
             </div>
 
@@ -320,7 +322,7 @@ export function TransactionsPage() {
                 Total Expenses
               </p>
               <p className="mt-3 text-2xl font-semibold text-red-600">
-                {formatMoney(totalExpenseCents)}
+                {money(totalExpenseCents)}
               </p>
             </div>
 
@@ -337,7 +339,7 @@ export function TransactionsPage() {
                 Total Transfers
               </p>
               <p className="mt-3 text-2xl font-semibold text-blue-600">
-                {formatMoney(totalTransferCents)}
+                {money(totalTransferCents)}
               </p>
             </div>
 
@@ -464,7 +466,7 @@ export function TransactionsPage() {
                         : "text-slate-950"
                     }`}
                   >
-                    {formatMoney(account.balanceCents)}
+                    {money(account.balanceCents)}
                   </p>
                 </div>
               ))}

@@ -4,7 +4,8 @@ import { GoalCard } from "../components/goals/GoalCard";
 import { GoalForm } from "../components/goals/GoalForm";
 import { Card } from "../components/ui/Card";
 import { useAuth } from "../hooks/useAuth";
-import { formatMoney } from "../lib/formatMoney";
+// import { formatMoney } from "../lib/formatMoney";
+import { useMoney } from "../hooks/useMoney";
 import {
   createGoal,
   deleteGoal,
@@ -16,6 +17,7 @@ import type { Goal } from "../types/goal";
 
 export function GoalsPage() {
   const { user } = useAuth();
+  const { money } = useMoney();
 
   const [goals, setGoals] = useState<Goal[]>([]);
   const [loading, setLoading] = useState(true);
@@ -245,7 +247,7 @@ export function GoalsPage() {
                   </p>
 
                   <p className="mt-3 text-2xl font-semibold text-slate-950">
-                    {formatMoney(totalTargetCents)}
+                    {money(totalTargetCents)}
                   </p>
                 </div>
 
@@ -263,7 +265,7 @@ export function GoalsPage() {
                   </p>
 
                   <p className="mt-3 text-2xl font-semibold text-emerald-600">
-                    {formatMoney(totalProgressCents)}
+                    {money(totalProgressCents)}
                   </p>
                 </div>
 

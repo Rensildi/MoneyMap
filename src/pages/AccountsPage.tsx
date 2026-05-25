@@ -8,6 +8,7 @@ import {
   createAccount,
   deleteAccount,
   fetchAccounts,
+  updateAccount,
 } from "../services/accountService";
 import type { Account } from "../types/account";
 
@@ -18,6 +19,8 @@ export function AccountsPage() {
   const [loading, setLoading] = useState(true);
   const [pageError, setPageError] = useState("");
   const [saving, setSaving] = useState(false);
+  const [editingAccount, setEditingAccount] = useState<Account | null>(null);
+
 
   useEffect(() => {
     async function loadAccounts() {
@@ -59,7 +62,7 @@ export function AccountsPage() {
 
   const netWorthCents = totalAssetsCents + totalDebtCents;
 
-  async function handleCreateAccount(account: Account) {
+  async function handleSubmitAccount(account: Account) {
     if (!user || saving) {
       return;
     }
@@ -68,18 +71,38 @@ export function AccountsPage() {
     setPageError("");
 
     try {
-      const savedAccount = await createAccount(user.id, {
-        name: account.name,
-        type: account.type,
-        balanceCents: account.balanceCents,
-      });
+      if (editingAccount) {
+        const savedAccount = await updateAccount(user.id, editingAccount.id, {
+          name: account.name,
+          type: account.type,
+          balanceCents: account.balanceCents,
+        });
 
-      setAccounts((currentAccounts) => [savedAccount, ...currentAccounts]);
+        setAccounts((currentAccounts) =>
+          currentAccounts.map((item) => {
+            if (item.id !== savedAccount.id) {
+              return item;
+            }
+
+            return savedAccount;
+          }),
+        );
+
+        setEditingAccount(null);
+      } else {
+        const savedAccount = await createAccount(user.id, {
+          name: account.name,
+          type: account.type,
+          balanceCents: account.balanceCents,
+        });
+
+        setAccounts((currentAccounts) => [savedAccount, ...currentAccounts]);
+      }
     } catch (error) {
       if (error instanceof Error) {
         setPageError(error.message);
       } else {
-        setPageError("Could not create account.");
+        setPageError("Could not save account.");
       }
     } finally {
       setSaving(false);
@@ -96,9 +119,14 @@ export function AccountsPage() {
     try {
       await deleteAccount(user.id, accountId);
 
+      if (editingAccount?.id === accountId) {
+        setEditingAccount(null);
+      }
+
       setAccounts((currentAccounts) =>
         currentAccounts.filter((account) => account.id !== accountId),
       );
+
     } catch (error) {
       if (error instanceof Error) {
         setPageError(error.message);
@@ -171,6 +199,7 @@ export function AccountsPage() {
                   <AccountCard
                     key={account.id}
                     account={account}
+                    onEditAccount={setEditingAccount}
                     onDeleteAccount={handleDeleteAccount}
                   />
                 ))}
@@ -191,7 +220,11 @@ export function AccountsPage() {
         </div>
 
         <div>
-          <AccountForm onCreateAccount={handleCreateAccount} />
+          <AccountForm
+            initialAccount={editingAccount}
+            onSubmitAccount={handleSubmitAccount}
+            onCancelEdit={() => setEditingAccount(null)}
+          />
 
           {saving && (
             <p className="mt-3 rounded-2xl bg-blue-50 px-4 py-3 text-sm font-semibold text-blue-700">

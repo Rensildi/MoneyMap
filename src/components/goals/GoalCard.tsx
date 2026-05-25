@@ -2,6 +2,7 @@ import { useState } from "react";
 import {
   Car,
   Home,
+  Pencil,
   Plane,
   ShieldCheck,
   Target,
@@ -14,6 +15,7 @@ import { ProgressBar } from "../ui/ProgressBar";
 
 type GoalCardProps = {
   goal: Goal;
+  onEditGoal: (goal: Goal) => void;
   onAddProgress: (goalId: string, amountCents: number) => void;
   onDeleteGoal: (goalId: string) => void;
 };
@@ -50,6 +52,7 @@ function formatTargetDate(date?: string) {
 
 export function GoalCard({
   goal,
+  onEditGoal,
   onAddProgress,
   onDeleteGoal,
 }: GoalCardProps) {
@@ -114,23 +117,35 @@ export function GoalCard({
           </div>
         </div>
 
-        <button
-          type="button"
-          onClick={() => {
-            const confirmed = window.confirm(
-              `Delete ${goal.name}? This cannot be undone.`,
-            );
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => onEditGoal(goal)}
+            className="rounded-2xl p-2 text-slate-400 transition hover:bg-blue-50 hover:text-blue-600"
+            aria-label="Edit goal"
+            title="Edit goal"
+          >
+            <Pencil size={18} />
+          </button>
 
-            if (confirmed) {
-              onDeleteGoal(goal.id);
-            }
-          }}
-          className="rounded-2xl p-2 text-slate-400 transition hover:bg-red-50 hover:text-red-600"
-          aria-label="Delete goal"
-          title="Delete goal"
-        >
-          <Trash2 size={20} />
-        </button>
+          <button
+            type="button"
+            onClick={() => {
+              const confirmed = window.confirm(
+                `Delete ${goal.name}? This cannot be undone.`,
+              );
+
+              if (confirmed) {
+                onDeleteGoal(goal.id);
+              }
+            }}
+            className="rounded-2xl p-2 text-slate-400 transition hover:bg-red-50 hover:text-red-600"
+            aria-label="Delete goal"
+            title="Delete goal"
+          >
+            <Trash2 size={20} />
+          </button>
+        </div>
       </div>
 
       <div className="mt-8">

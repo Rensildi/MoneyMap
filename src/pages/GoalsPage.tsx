@@ -9,6 +9,7 @@ import {
   createGoal,
   deleteGoal,
   fetchGoals,
+  updateGoal,
   updateGoalProgress,
 } from "../services/goalService";
 import type { Goal } from "../types/goal";
@@ -20,6 +21,7 @@ export function GoalsPage() {
   const [loading, setLoading] = useState(true);
   const [pageError, setPageError] = useState("");
   const [savingMessage, setSavingMessage] = useState("");
+  const [editingGoal, setEditingGoal] = useState<Goal | null>(null);
 
   useEffect(() => {
     async function loadGoals() {
@@ -72,7 +74,7 @@ export function GoalsPage() {
     }, 2200);
   }
 
-  async function handleCreateGoal(goal: Goal) {
+  async function handleSubmitGoal(goal: Goal) {
     if (!user) {
       return;
     }
@@ -80,21 +82,44 @@ export function GoalsPage() {
     setPageError("");
 
     try {
-      const savedGoal = await createGoal(user.id, {
-        name: goal.name,
-        type: goal.type,
-        targetCents: goal.targetCents,
-        currentCents: goal.currentCents,
-        targetDate: goal.targetDate,
-      });
+      if (editingGoal) {
+        const savedGoal = await updateGoal(user.id, editingGoal.id, {
+          name: goal.name,
+          type: goal.type,
+          targetCents: goal.targetCents,
+          currentCents: goal.currentCents,
+          targetDate: goal.targetDate,
+        });
 
-      setGoals((currentGoals) => [savedGoal, ...currentGoals]);
-      showSavedMessage("Goal saved.");
+        setGoals((currentGoals) =>
+          currentGoals.map((item) => {
+            if (item.id !== savedGoal.id) {
+              return item;
+            }
+
+            return savedGoal;
+          }),
+        );
+
+        setEditingGoal(null);
+        showSavedMessage("Goal updated.");
+      } else {
+        const savedGoal = await createGoal(user.id, {
+          name: goal.name,
+          type: goal.type,
+          targetCents: goal.targetCents,
+          currentCents: goal.currentCents,
+          targetDate: goal.targetDate,
+        });
+
+        setGoals((currentGoals) => [savedGoal, ...currentGoals]);
+        showSavedMessage("Goal saved.");
+      }
     } catch (error) {
       if (error instanceof Error) {
         setPageError(error.message);
       } else {
-        setPageError("Could not create goal.");
+        setPageError("Could not save goal.");
       }
     }
   }
@@ -123,6 +148,10 @@ export function GoalsPage() {
         goalId,
         nextCurrentCents,
       );
+
+      if (editingGoal?.id === updatedGoal.id) {
+        setEditingGoal(updatedGoal);
+      }
 
       setGoals((currentGoals) =>
         currentGoals.map((item) => {
@@ -153,6 +182,10 @@ export function GoalsPage() {
 
     try {
       await deleteGoal(user.id, goalId);
+
+      if (editingGoal?.id === goalId) {
+        setEditingGoal(null);
+      }
 
       setGoals((currentGoals) =>
         currentGoals.filter((goal) => goal.id !== goalId),
@@ -301,6 +334,7 @@ export function GoalsPage() {
                   <GoalCard
                     key={goal.id}
                     goal={goal}
+                    onEditGoal={setEditingGoal}
                     onAddProgress={handleAddProgress}
                     onDeleteGoal={handleDeleteGoal}
                   />
@@ -326,7 +360,11 @@ export function GoalsPage() {
             </div>
 
             <div className="space-y-5">
-              <GoalForm onCreateGoal={handleCreateGoal} />
+              <GoalForm
+                initialGoal={editingGoal}
+                onSubmitGoal={handleSubmitGoal}
+                onCancelEdit={() => setEditingGoal(null)}
+              />
 
               <Card>
                 <p className="text-sm font-medium text-slate-500">

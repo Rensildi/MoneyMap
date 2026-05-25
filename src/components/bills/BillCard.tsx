@@ -2,6 +2,7 @@ import {
   CalendarClock,
   CheckCircle2,
   Clock3,
+  Pencil,
   Trash2,
   TriangleAlert,
 } from "lucide-react";
@@ -16,6 +17,7 @@ type BillCardProps = {
   account?: Account;
   selectedMonth: string;
   isPaid: boolean;
+  onEditBill: (bill: Bill) => void;
   onTogglePaid: (billId: string) => void;
   onDeleteBill: (billId: string) => void;
 };
@@ -63,6 +65,7 @@ export function BillCard({
   account,
   selectedMonth,
   isPaid,
+  onEditBill,
   onTogglePaid,
   onDeleteBill,
 }: BillCardProps) {
@@ -148,23 +151,35 @@ export function BillCard({
           </div>
         </div>
 
-        <button
-          type="button"
-          onClick={() => {
-            const confirmed = window.confirm(
-              `Delete ${bill.name}? This cannot be undone.`,
-            );
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => onEditBill(bill)}
+            className="rounded-2xl p-2 text-slate-400 transition hover:bg-blue-50 hover:text-blue-600"
+            aria-label="Edit bill"
+            title="Edit bill"
+          >
+            <Pencil size={18} />
+          </button>
 
-            if (confirmed) {
-              onDeleteBill(bill.id);
-            }
-          }}
-          className="rounded-2xl p-2 text-slate-400 transition hover:bg-red-50 hover:text-red-600"
-          aria-label="Delete bill"
-          title="Delete bill"
-        >
-          <Trash2 size={20} />
-        </button>
+          <button
+            type="button"
+            onClick={() => {
+              const confirmed = window.confirm(
+                `Delete ${bill.name}? This cannot be undone.`,
+              );
+
+              if (confirmed) {
+                onDeleteBill(bill.id);
+              }
+            }}
+            className="rounded-2xl p-2 text-slate-400 transition hover:bg-red-50 hover:text-red-600"
+            aria-label="Delete bill"
+            title="Delete bill"
+          >
+            <Trash2 size={18} />
+          </button>
+        </div>
       </div>
 
       <div className="mt-8 flex items-end justify-between gap-4">

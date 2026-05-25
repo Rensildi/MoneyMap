@@ -165,3 +165,39 @@ export async function markBillUnpaid(
     throw error;
   }
 }
+
+export async function updateBill(
+  userId: string,
+  billId: string,
+  bill: {
+    name: string;
+    amountCents: number;
+    categoryId?: string;
+    accountId?: string;
+    dueDay: number;
+    frequency: BillFrequency;
+  },
+): Promise<Bill> {
+  const { data, error } = await supabase
+    .from("bills")
+    .update({
+      name: bill.name,
+      amount_cents: bill.amountCents,
+      category_id: bill.categoryId ?? null,
+      account_id: bill.accountId ?? null,
+      due_day: bill.dueDay,
+      frequency: bill.frequency,
+    })
+    .eq("id", billId)
+    .eq("user_id", userId)
+    .select(
+      "id, user_id, name, amount_cents, category_id, account_id, due_day, frequency, is_active, created_at",
+    )
+    .single();
+
+  if (error) {
+    throw error;
+  }
+
+  return mapBillRow(data as BillRow);
+}

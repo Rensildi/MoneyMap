@@ -110,3 +110,37 @@ export async function deleteGoal(
     throw error;
   }
 }
+
+export async function updateGoal(
+  userId: string,
+  goalId: string,
+  goal: {
+    name: string;
+    type: GoalType;
+    targetCents: number;
+    currentCents: number;
+    targetDate?: string;
+  },
+): Promise<Goal> {
+  const { data, error } = await supabase
+    .from("goals")
+    .update({
+      name: goal.name,
+      type: goal.type,
+      target_cents: goal.targetCents,
+      current_cents: goal.currentCents,
+      target_date: goal.targetDate ?? null,
+    })
+    .eq("id", goalId)
+    .eq("user_id", userId)
+    .select(
+      "id, user_id, name, type, target_cents, current_cents, target_date, created_at",
+    )
+    .single();
+
+  if (error) {
+    throw error;
+  }
+
+  return mapGoalRow(data as GoalRow);
+}

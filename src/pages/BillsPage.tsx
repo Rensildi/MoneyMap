@@ -18,6 +18,7 @@ import {
   fetchPaidBillIdsForMonth,
   markBillPaid,
   markBillUnpaid,
+  updateBill,
 } from "../services/billService";
 import { seedDefaultCategoriesIfNeeded } from "../services/categoryService";
 import type { Account } from "../types/account";
@@ -69,6 +70,7 @@ export function BillsPage() {
   const [loading, setLoading] = useState(true);
   const [savingMessage, setSavingMessage] = useState("");
   const [pageError, setPageError] = useState("");
+  const [editingBill, setEditingBill] = useState<Bill | null>(null);
 
   useEffect(() => {
     async function loadBillsData() {
@@ -156,7 +158,7 @@ export function BillsPage() {
     }, 2200);
   }
 
-  async function handleCreateBill(bill: Bill) {
+  async function handleSubmitBill(bill: Bill) {
     if (!user) {
       return;
     }
@@ -164,22 +166,46 @@ export function BillsPage() {
     setPageError("");
 
     try {
-      const savedBill = await createBill(user.id, {
-        name: bill.name,
-        amountCents: bill.amountCents,
-        categoryId: bill.categoryId,
-        accountId: bill.accountId,
-        dueDay: bill.dueDay,
-        frequency: bill.frequency,
-      });
+      if (editingBill) {
+        const savedBill = await updateBill(user.id, editingBill.id, {
+          name: bill.name,
+          amountCents: bill.amountCents,
+          categoryId: bill.categoryId,
+          accountId: bill.accountId,
+          dueDay: bill.dueDay,
+          frequency: bill.frequency,
+        });
 
-      setBills((currentBills) => [savedBill, ...currentBills]);
-      showSavedMessage("Bill saved.");
+        setBills((currentBills) =>
+          currentBills.map((item) => {
+            if (item.id !== savedBill.id) {
+              return item;
+            }
+
+            return savedBill;
+          }),
+        );
+
+        setEditingBill(null);
+        showSavedMessage("Bill updated.");
+      } else {
+        const savedBill = await createBill(user.id, {
+          name: bill.name,
+          amountCents: bill.amountCents,
+          categoryId: bill.categoryId,
+          accountId: bill.accountId,
+          dueDay: bill.dueDay,
+          frequency: bill.frequency,
+        });
+
+        setBills((currentBills) => [savedBill, ...currentBills]);
+        showSavedMessage("Bill saved.");
+      }
     } catch (error) {
       if (error instanceof Error) {
         setPageError(error.message);
       } else {
-        setPageError("Could not create bill.");
+        setPageError("Could not save bill.");
       }
     }
   }
@@ -233,6 +259,10 @@ export function BillsPage() {
 
     try {
       await deleteBill(user.id, billId);
+
+      if (editingBill?.id === billId) {
+        setEditingBill(null);
+      }
 
       setBills((currentBills) =>
         currentBills.filter((bill) => bill.id !== billId),
@@ -417,6 +447,7 @@ export function BillsPage() {
                       account={account}
                       selectedMonth={selectedMonth}
                       isPaid={paidBillIds.has(bill.id)}
+                      onEditBill={setEditingBill}
                       onTogglePaid={handleTogglePaid}
                       onDeleteBill={handleDeleteBill}
                     />
@@ -452,7 +483,9 @@ export function BillsPage() {
               <BillForm
                 accounts={accounts}
                 categories={categories}
-                onCreateBill={handleCreateBill}
+                initialBill={editingBill}
+                onSubmitBill={handleSubmitBill}
+                onCancelEdit={() => setEditingBill(null)}
               />
 
               <Card>

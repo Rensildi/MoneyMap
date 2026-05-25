@@ -3,6 +3,7 @@ import {
   CircleDollarSign,
   CreditCard,
   Landmark,
+  Pencil,
   PiggyBank,
   Trash2,
   TrendingUp,
@@ -12,6 +13,7 @@ import { formatMoney } from "../../lib/formatMoney";
 
 type AccountCardProps = {
   account: Account;
+  onEditAccount?: (account: Account) => void;
   onDeleteAccount?: (accountId: string) => void;
 };
 
@@ -33,7 +35,7 @@ const accountTypeIcons = {
   investment: TrendingUp,
 };
 
-export function AccountCard({ account, onDeleteAccount }: AccountCardProps) {
+export function AccountCard({ account, onEditAccount, onDeleteAccount }: AccountCardProps) {
   const Icon = accountTypeIcons[account.type];
 
   const isDebtAccount =
@@ -71,6 +73,18 @@ export function AccountCard({ account, onDeleteAccount }: AccountCardProps) {
           >
             Saved
           </span>
+
+          {onEditAccount && (
+            <button
+              type="button"
+              onClick={() => onEditAccount(account)}
+              className="rounded-2xl p-2 text-slate-400 transition hover:bg-blue-50 hover:text-blue-600"
+              aria-label="Edit account"
+              title="Edit account"
+            >
+              <Pencil size={18} />
+            </button>
+          )}
 
           {onDeleteAccount && (
             <button

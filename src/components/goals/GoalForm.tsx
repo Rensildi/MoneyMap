@@ -1,45 +1,55 @@
-import { useState, type FormEvent } from "react";
-import { Plus } from "lucide-react";
+import { useEffect, useState, type FormEvent } from "react";
+import { Plus, Save } from "lucide-react";
 import type { Goal, GoalType } from "../../types/goal";
 import { dollarsToCents } from "../../lib/formatMoney";
 
 type GoalFormProps = {
-  onCreateGoal: (goal: Goal) => void;
+  initialGoal?: Goal | null;
+  onSubmitGoal: (goal: Goal) => void;
+  onCancelEdit?: () => void;
 };
 
 const goalTypes: { label: string; value: GoalType }[] = [
-  {
-    label: "Emergency Fund",
-    value: "emergency_fund",
-  },
-  {
-    label: "Vacation",
-    value: "vacation",
-  },
-  {
-    label: "Car",
-    value: "car",
-  },
-  {
-    label: "House",
-    value: "house",
-  },
-  {
-    label: "Debt Payoff",
-    value: "debt_payoff",
-  },
-  {
-    label: "Custom",
-    value: "custom",
-  },
+  { label: "Emergency Fund", value: "emergency_fund" },
+  { label: "Vacation", value: "vacation" },
+  { label: "Car", value: "car" },
+  { label: "House", value: "house" },
+  { label: "Debt Payoff", value: "debt_payoff" },
+  { label: "Custom", value: "custom" },
 ];
 
-export function GoalForm({ onCreateGoal }: GoalFormProps) {
+export function GoalForm({
+  initialGoal,
+  onSubmitGoal,
+  onCancelEdit,
+}: GoalFormProps) {
+  const isEditing = Boolean(initialGoal);
+
   const [name, setName] = useState("");
   const [type, setType] = useState<GoalType>("emergency_fund");
   const [targetAmount, setTargetAmount] = useState("");
   const [currentAmount, setCurrentAmount] = useState("");
   const [targetDate, setTargetDate] = useState("");
+
+  useEffect(() => {
+    if (!initialGoal) {
+      return;
+    }
+
+    setName(initialGoal.name);
+    setType(initialGoal.type);
+    setTargetAmount(String(initialGoal.targetCents / 100));
+    setCurrentAmount(String(initialGoal.currentCents / 100));
+    setTargetDate(initialGoal.targetDate ?? "");
+  }, [initialGoal]);
+
+  function resetForm() {
+    setName("");
+    setType("emergency_fund");
+    setTargetAmount("");
+    setCurrentAmount("");
+    setTargetDate("");
+  }
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -51,23 +61,21 @@ export function GoalForm({ onCreateGoal }: GoalFormProps) {
       return;
     }
 
-    const newGoal: Goal = {
-      id: crypto.randomUUID(),
+    const submittedGoal: Goal = {
+      id: initialGoal?.id ?? crypto.randomUUID(),
       name: name.trim(),
       type,
       targetCents,
       currentCents: Math.min(currentCents, targetCents),
       targetDate: targetDate || undefined,
-      createdAt: new Date().toISOString(),
+      createdAt: initialGoal?.createdAt ?? new Date().toISOString(),
     };
 
-    onCreateGoal(newGoal);
+    onSubmitGoal(submittedGoal);
 
-    setName("");
-    setType("emergency_fund");
-    setTargetAmount("");
-    setCurrentAmount("");
-    setTargetDate("");
+    if (!isEditing) {
+      resetForm();
+    }
   }
 
   return (
@@ -76,10 +84,12 @@ export function GoalForm({ onCreateGoal }: GoalFormProps) {
       className="rounded-[2rem] border border-white/70 bg-white/80 p-6 shadow-xl shadow-slate-200/70 backdrop-blur"
     >
       <div>
-        <p className="text-sm font-semibold text-blue-600">New Goal</p>
+        <p className="text-sm font-semibold text-blue-600">
+          {isEditing ? "Edit Goal" : "New Goal"}
+        </p>
 
         <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">
-          Create a money goal
+          {isEditing ? "Update money goal" : "Create a money goal"}
         </h2>
 
         <p className="mt-2 text-sm leading-6 text-slate-500">
@@ -166,13 +176,25 @@ export function GoalForm({ onCreateGoal }: GoalFormProps) {
         </div>
       </div>
 
-      <button
-        type="submit"
-        className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-slate-300 transition hover:-translate-y-0.5 hover:bg-slate-800"
-      >
-        <Plus size={18} />
-        Add goal
-      </button>
+      <div className="mt-6 space-y-3">
+        <button
+          type="submit"
+          className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-slate-300 transition hover:-translate-y-0.5 hover:bg-slate-800"
+        >
+          {isEditing ? <Save size={18} /> : <Plus size={18} />}
+          {isEditing ? "Save goal" : "Add goal"}
+        </button>
+
+        {isEditing && onCancelEdit && (
+          <button
+            type="button"
+            onClick={onCancelEdit}
+            className="inline-flex w-full items-center justify-center rounded-2xl bg-slate-100 px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-200"
+          >
+            Cancel edit
+          </button>
+        )}
+      </div>
     </form>
   );
 }

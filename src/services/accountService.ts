@@ -59,10 +59,73 @@ export async function createAccount(
   return mapAccountRow(data as AccountRow);
 }
 
+export async function updateAccount(
+  userId: string,
+  accountId: string,
+  account: {
+    name: string;
+    type: AccountType;
+    balanceCents: number;
+  },
+): Promise<Account> {
+  const { data, error } = await supabase
+    .from("accounts")
+    .update({
+      name: account.name,
+      type: account.type,
+      balance_cents: account.balanceCents,
+    })
+    .eq("id", accountId)
+    .eq("user_id", userId)
+    .select("id, user_id, name, type, balance_cents, created_at")
+    .single();
+
+  if (error) {
+    throw error;
+  }
+
+  return mapAccountRow(data as AccountRow);
+}
+
 export async function deleteAccount(
   userId: string,
   accountId: string,
 ): Promise<void> {
+  const { data: dependentTransactions, error: transactionError } =
+    await supabase
+      .from("transactions")
+      .select("id")
+      .eq("user_id", userId)
+      .or(`account_id.eq.${accountId},transfer_account_id.eq.${accountId}`)
+      .limit(1);
+
+  if (transactionError) {
+    throw transactionError;
+  }
+
+  if ((dependentTransactions ?? []).length > 0) {
+    throw new Error(
+      "This account has transactions. Delete or move those transactions before deleting the account.",
+    );
+  }
+
+  const { data: dependentBills, error: billError } = await supabase
+    .from("bills")
+    .select("id")
+    .eq("user_id", userId)
+    .eq("account_id", accountId)
+    .limit(1);
+
+  if (billError) {
+    throw billError;
+  }
+
+  if ((dependentBills ?? []).length > 0) {
+    throw new Error(
+      "This account is used by bills. Remove or edit those bills before deleting the account.",
+    );
+  }
+
   const { error } = await supabase
     .from("accounts")
     .delete()

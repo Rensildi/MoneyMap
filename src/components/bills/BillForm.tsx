@@ -1,5 +1,5 @@
-import { useState, type FormEvent } from "react";
-import { Plus } from "lucide-react";
+import { useEffect, useState, type FormEvent } from "react";
+import { Plus, Save } from "lucide-react";
 import type { Account } from "../../types/account";
 import type { Bill, BillFrequency } from "../../types/bill";
 import type { Category } from "../../types/category";
@@ -8,25 +8,26 @@ import { dollarsToCents } from "../../lib/formatMoney";
 type BillFormProps = {
   accounts: Account[];
   categories: Category[];
-  onCreateBill: (bill: Bill) => void;
+  initialBill?: Bill | null;
+  onSubmitBill: (bill: Bill) => void;
+  onCancelEdit?: () => void;
 };
 
 const frequencyOptions: { label: string; value: BillFrequency }[] = [
-  {
-    label: "Monthly",
-    value: "monthly",
-  },
-  {
-    label: "Weekly",
-    value: "weekly",
-  },
-  {
-    label: "Yearly",
-    value: "yearly",
-  },
+  { label: "Monthly", value: "monthly" },
+  { label: "Weekly", value: "weekly" },
+  { label: "Yearly", value: "yearly" },
 ];
 
-export function BillForm({ accounts, categories, onCreateBill }: BillFormProps) {
+export function BillForm({
+  accounts,
+  categories,
+  initialBill,
+  onSubmitBill,
+  onCancelEdit,
+}: BillFormProps) {
+  const isEditing = Boolean(initialBill);
+
   const expenseCategories = categories.filter(
     (category) => category.type === "expense",
   );
@@ -35,8 +36,40 @@ export function BillForm({ accounts, categories, onCreateBill }: BillFormProps) 
   const [amount, setAmount] = useState("");
   const [dueDay, setDueDay] = useState("1");
   const [frequency, setFrequency] = useState<BillFrequency>("monthly");
-  const [categoryId, setCategoryId] = useState(expenseCategories[0]?.id ?? "");
-  const [accountId, setAccountId] = useState(accounts[0]?.id ?? "");
+  const [categoryId, setCategoryId] = useState("");
+  const [accountId, setAccountId] = useState("");
+
+  useEffect(() => {
+    if (!initialBill) {
+      return;
+    }
+
+    setName(initialBill.name);
+    setAmount(String(initialBill.amountCents / 100));
+    setDueDay(String(initialBill.dueDay));
+    setFrequency(initialBill.frequency);
+    setCategoryId(initialBill.categoryId ?? "");
+    setAccountId(initialBill.accountId ?? "");
+  }, [initialBill]);
+
+  useEffect(() => {
+    if (!initialBill && !categoryId && expenseCategories.length > 0) {
+      setCategoryId(expenseCategories[0].id);
+    }
+
+    if (!initialBill && !accountId && accounts.length > 0) {
+      setAccountId(accounts[0].id);
+    }
+  }, [accounts, expenseCategories, accountId, categoryId, initialBill]);
+
+  function resetForm() {
+    setName("");
+    setAmount("");
+    setDueDay("1");
+    setFrequency("monthly");
+    setCategoryId(expenseCategories[0]?.id ?? "");
+    setAccountId(accounts[0]?.id ?? "");
+  }
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -52,8 +85,8 @@ export function BillForm({ accounts, categories, onCreateBill }: BillFormProps) 
       return;
     }
 
-    const newBill: Bill = {
-      id: crypto.randomUUID(),
+    const submittedBill: Bill = {
+      id: initialBill?.id ?? crypto.randomUUID(),
       name: name.trim(),
       amountCents,
       categoryId: categoryId || undefined,
@@ -61,17 +94,14 @@ export function BillForm({ accounts, categories, onCreateBill }: BillFormProps) 
       dueDay: dueDayNumber,
       frequency,
       isActive: true,
-      createdAt: new Date().toISOString(),
+      createdAt: initialBill?.createdAt ?? new Date().toISOString(),
     };
 
-    onCreateBill(newBill);
+    onSubmitBill(submittedBill);
 
-    setName("");
-    setAmount("");
-    setDueDay("1");
-    setFrequency("monthly");
-    setCategoryId(expenseCategories[0]?.id ?? "");
-    setAccountId(accounts[0]?.id ?? "");
+    if (!isEditing) {
+      resetForm();
+    }
   }
 
   return (
@@ -80,10 +110,12 @@ export function BillForm({ accounts, categories, onCreateBill }: BillFormProps) 
       className="rounded-[2rem] border border-white/70 bg-white/80 p-6 shadow-xl shadow-slate-200/70 backdrop-blur"
     >
       <div>
-        <p className="text-sm font-semibold text-blue-600">New Bill</p>
+        <p className="text-sm font-semibold text-blue-600">
+          {isEditing ? "Edit Bill" : "New Bill"}
+        </p>
 
         <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">
-          Add recurring payment
+          {isEditing ? "Update recurring payment" : "Add recurring payment"}
         </h2>
 
         <p className="mt-2 text-sm leading-6 text-slate-500">
@@ -128,10 +160,6 @@ export function BillForm({ accounts, categories, onCreateBill }: BillFormProps) 
             inputMode="numeric"
             className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition placeholder:text-slate-400 focus:border-slate-950"
           />
-
-          <p className="mt-2 text-xs text-slate-400">
-            Use a number from 1 to 31. Example: 15 means due on the 15th.
-          </p>
         </div>
 
         <div>
@@ -191,13 +219,25 @@ export function BillForm({ accounts, categories, onCreateBill }: BillFormProps) 
         </div>
       </div>
 
-      <button
-        type="submit"
-        className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-slate-300 transition hover:-translate-y-0.5 hover:bg-slate-800"
-      >
-        <Plus size={18} />
-        Add bill
-      </button>
+      <div className="mt-6 space-y-3">
+        <button
+          type="submit"
+          className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-slate-300 transition hover:-translate-y-0.5 hover:bg-slate-800"
+        >
+          {isEditing ? <Save size={18} /> : <Plus size={18} />}
+          {isEditing ? "Save bill" : "Add bill"}
+        </button>
+
+        {isEditing && onCancelEdit && (
+          <button
+            type="button"
+            onClick={onCancelEdit}
+            className="inline-flex w-full items-center justify-center rounded-2xl bg-slate-100 px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-200"
+          >
+            Cancel edit
+          </button>
+        )}
+      </div>
     </form>
   );
 }

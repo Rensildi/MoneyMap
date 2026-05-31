@@ -12,6 +12,7 @@ import {
 import { NavLink, Outlet } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
+import { InstallPrompt } from "../pwa/InstallPrompt";
 
 const navItems = [
   {
@@ -145,6 +146,7 @@ export function AppShell() {
           );
         })}
       </nav>
+      <InstallPrompt />
     </div>
   );
 }

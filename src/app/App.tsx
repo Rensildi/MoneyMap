@@ -12,6 +12,7 @@ import { GoalsPage } from "../pages/GoalsPage";
 import { ReportsPage } from "../pages/ReportsPage";
 import { SettingsPage } from "../pages/SettingsPage";
 import { TransactionsPage } from "../pages/TransactionsPage";
+import { PwaUpdatePrompt } from "../components/pwa/PwaUpdatePrompt";
 
 
 export default function App() {
@@ -19,6 +20,7 @@ export default function App() {
     <BrowserRouter>
       <AuthProvider>
         <ProfileProvider>
+          <PwaUpdatePrompt />
           <Routes>
             <Route path="/auth" element={<AuthPage />} />
 

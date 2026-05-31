@@ -138,54 +138,6 @@ export function TransactionsPage() {
       .reduce((total, transaction) => total + transaction.amountCents, 0);
   }, [transactions]);
 
-  function updateAccountBalances(transaction: Transaction) {
-    setAccounts((currentAccounts) => {
-      return currentAccounts.map((account) => {
-        if (transaction.type === "income") {
-          if (account.id !== transaction.accountId) {
-            return account;
-          }
-
-          return {
-            ...account,
-            balanceCents: account.balanceCents + transaction.amountCents,
-          };
-        }
-
-        if (transaction.type === "expense") {
-          if (account.id !== transaction.accountId) {
-            return account;
-          }
-
-          return {
-            ...account,
-            balanceCents: account.balanceCents - transaction.amountCents,
-          };
-        }
-
-        if (transaction.type === "transfer") {
-          if (account.id === transaction.accountId) {
-            return {
-              ...account,
-              balanceCents: account.balanceCents - transaction.amountCents,
-            };
-          }
-
-          if (account.id === transaction.transferAccountId) {
-            return {
-              ...account,
-              balanceCents: account.balanceCents + transaction.amountCents,
-            };
-          }
-
-          return account;
-        }
-
-        return account;
-      });
-    });
-  }
-
   async function handleSubmitTransaction(transaction: Transaction) {
     if (!user || saving) {
       return;

@@ -144,7 +144,7 @@ export function TransactionForm({
 
         <p className="mt-2 text-sm leading-6 text-slate-500">
           {isEditing
-            ? "Update the transaction and CashPilot will adjust balances safely."
+            ? "Update the transaction and Money Map will adjust balances safely."
             : "Add income, expenses, or transfers between your manual accounts."}
         </p>
       </div>

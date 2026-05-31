@@ -13,7 +13,7 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
     return (
       <main className="flex min-h-screen items-center justify-center p-6">
         <div className="rounded-[2rem] border border-white/70 bg-white/80 p-8 text-center shadow-xl shadow-slate-200/70 backdrop-blur">
-          <p className="text-sm font-semibold text-blue-600">CashPilot</p>
+          <p className="text-sm font-semibold text-blue-600">Money Map</p>
           <h1 className="mt-3 text-2xl font-semibold text-slate-950">
             Loading your app...
           </h1>

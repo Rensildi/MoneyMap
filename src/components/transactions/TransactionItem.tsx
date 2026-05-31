@@ -137,7 +137,7 @@ export function TransactionItem({
               type="button"
               onClick={() => {
                 const confirmed = window.confirm(
-                  "Delete this transaction? CashPilot will reverse its balance effect.",
+                  "Delete this transaction? Money Map will reverse its balance effect.",
                 );
 
                 if (confirmed) {

@@ -77,7 +77,7 @@ export function AppShell() {
 
           <div>
             <p className="text-lg font-semibold tracking-tight text-slate-950">
-              CashPilot
+              Money Map
             </p>
             <p className="text-xs font-medium text-slate-500">
               Budget with clarity

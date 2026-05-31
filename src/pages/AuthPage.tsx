@@ -57,7 +57,7 @@ export function AuthPage() {
           </div>
 
           <div>
-            <p className="text-xl font-semibold tracking-tight">CashPilot</p>
+            <p className="text-xl font-semibold tracking-tight">Money Map</p>
             <p className="text-sm text-slate-400">Budget with clarity</p>
           </div>
         </div>
@@ -110,7 +110,7 @@ export function AuthPage() {
 
             <div>
               <p className="text-xl font-semibold tracking-tight text-slate-950">
-                CashPilot
+                Money Map
               </p>
               <p className="text-sm text-slate-500">Budget with clarity</p>
             </div>
@@ -129,7 +129,7 @@ export function AuthPage() {
               <p className="mt-2 text-sm leading-6 text-slate-500">
                 {mode === "signin"
                   ? "Sign in to manage your saved budget data."
-                  : "Start tracking your money with a private CashPilot account."}
+                  : "Start tracking your money with a private Money Map account."}
               </p>
             </div>
 

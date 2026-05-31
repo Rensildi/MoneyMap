@@ -105,7 +105,7 @@ export function InstallPrompt() {
           <div className="flex items-start justify-between gap-3">
             <div>
               <p className="font-semibold text-slate-950 dark:text-white">
-                Install CashPilot
+                Install Money Map
               </p>
 
               <p className="mt-1 text-sm leading-5 text-slate-500 dark:text-slate-400">

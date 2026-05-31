@@ -16,7 +16,7 @@ export function PwaUpdatePrompt() {
   return (
     <div className="fixed left-4 right-4 top-4 z-[70] mx-auto max-w-md rounded-[1.5rem] border border-blue-100 bg-blue-50 p-4 shadow-xl shadow-blue-100 dark:border-blue-900/50 dark:bg-blue-950 dark:shadow-black/40">
       <p className="font-semibold text-blue-900 dark:text-blue-100">
-        A new version of CashPilot is available.
+        A new version of Money Map is available.
       </p>
 
       <p className="mt-1 text-sm text-blue-700 dark:text-blue-200">

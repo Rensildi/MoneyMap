@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowDownRight,
   ArrowRightLeft,
@@ -9,7 +9,6 @@ import { TransactionForm } from "../components/transactions/TransactionForm";
 import { TransactionItem } from "../components/transactions/TransactionItem";
 import { Card } from "../components/ui/Card";
 import { useAuth } from "../hooks/useAuth";
-// import { formatMoney } from "../lib/formatMoney";
 import { useMoney } from "../hooks/useMoney";
 import { fetchAccounts } from "../services/accountService";
 import { seedDefaultCategoriesIfNeeded } from "../services/categoryService";
@@ -44,30 +43,29 @@ const filters: { label: string; value: FilterType }[] = [
   },
 ];
 
+function getCurrentMonth() {
+  return new Date().toISOString().slice(0, 7);
+}
+
 export function TransactionsPage() {
   const { user } = useAuth();
   const { money } = useMoney();
+
+  const formRef = useRef<HTMLDivElement | null>(null);
+
+  const [selectedMonth, setSelectedMonth] = useState(getCurrentMonth());
 
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [activeFilter, setActiveFilter] = useState<FilterType>("all");
 
+  const [editingTransaction, setEditingTransaction] =
+    useState<Transaction | null>(null);
+
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [pageError, setPageError] = useState("");
-
-  const [editingTransaction, setEditingTransaction] =
-  useState<Transaction | null>(null);
-
-  async function reloadAccounts() {
-    if (!user) {
-      return;
-    }
-
-    const savedAccounts = await fetchAccounts(user.id);
-    setAccounts(savedAccounts);
-  }
 
   useEffect(() => {
     async function loadData() {
@@ -103,8 +101,23 @@ export function TransactionsPage() {
     loadData();
   }, [user]);
 
+  async function reloadAccounts() {
+    if (!user) {
+      return;
+    }
+
+    const savedAccounts = await fetchAccounts(user.id);
+    setAccounts(savedAccounts);
+  }
+
+  const transactionsForSelectedMonth = useMemo(() => {
+    return transactions.filter((transaction) =>
+      transaction.transactionDate.startsWith(selectedMonth),
+    );
+  }, [transactions, selectedMonth]);
+
   const filteredTransactions = useMemo(() => {
-    return transactions
+    return transactionsForSelectedMonth
       .filter((transaction) => {
         if (activeFilter === "all") {
           return true;
@@ -118,25 +131,36 @@ export function TransactionsPage() {
           new Date(a.transactionDate).getTime()
         );
       });
-  }, [transactions, activeFilter]);
+  }, [transactionsForSelectedMonth, activeFilter]);
 
   const totalIncomeCents = useMemo(() => {
-    return transactions
+    return transactionsForSelectedMonth
       .filter((transaction) => transaction.type === "income")
       .reduce((total, transaction) => total + transaction.amountCents, 0);
-  }, [transactions]);
+  }, [transactionsForSelectedMonth]);
 
   const totalExpenseCents = useMemo(() => {
-    return transactions
+    return transactionsForSelectedMonth
       .filter((transaction) => transaction.type === "expense")
       .reduce((total, transaction) => total + transaction.amountCents, 0);
-  }, [transactions]);
+  }, [transactionsForSelectedMonth]);
 
   const totalTransferCents = useMemo(() => {
-    return transactions
+    return transactionsForSelectedMonth
       .filter((transaction) => transaction.type === "transfer")
       .reduce((total, transaction) => total + transaction.amountCents, 0);
-  }, [transactions]);
+  }, [transactionsForSelectedMonth]);
+
+  function handleEditTransaction(transaction: Transaction) {
+    setEditingTransaction(transaction);
+
+    window.setTimeout(() => {
+      formRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }, 100);
+  }
 
   async function handleSubmitTransaction(transaction: Transaction) {
     if (!user || saving) {
@@ -211,7 +235,9 @@ export function TransactionsPage() {
       await deleteTransaction(transactionId);
 
       setTransactions((currentTransactions) =>
-        currentTransactions.filter((transaction) => transaction.id !== transactionId),
+        currentTransactions.filter(
+          (transaction) => transaction.id !== transactionId,
+        ),
       );
 
       if (editingTransaction?.id === transactionId) {
@@ -233,69 +259,99 @@ export function TransactionsPage() {
       <div className="mb-8 flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
         <div>
           <p className="text-sm font-semibold text-blue-600">Transactions</p>
-          <h1 className="mt-2 text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">
+
+          <h1 className="mt-2 text-3xl font-semibold tracking-tight text-slate-950 dark:text-white sm:text-4xl">
             Money activity
           </h1>
-          <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
+
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500 dark:text-slate-400">
             Manually add income, expenses, and transfers. These transactions are
             now saved in Supabase.
           </p>
         </div>
+
+        <div className="w-full rounded-[1.5rem] border border-white/70 bg-white/80 p-4 shadow-lg shadow-slate-200/60 backdrop-blur dark:border-slate-800 dark:bg-slate-900/80 dark:shadow-black/30 sm:w-60">
+          <label className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+            Viewing month
+          </label>
+
+          <input
+            type="month"
+            value={selectedMonth}
+            onChange={(event) => setSelectedMonth(event.target.value)}
+            className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-950 dark:border-slate-700 dark:bg-slate-950 dark:text-white dark:focus:border-white"
+          />
+        </div>
       </div>
 
       {pageError && (
-        <div className="mb-5 rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
+        <div className="mb-5 rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700 dark:border-red-900/40 dark:bg-red-950/30 dark:text-red-300">
           {pageError}
         </div>
       )}
 
       <div className="mb-5 grid gap-5 md:grid-cols-3">
         <Card>
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-4">
             <div>
-              <p className="text-sm font-medium text-slate-500">
+              <p className="text-sm font-medium text-slate-500 dark:text-slate-400">
                 Total Income
               </p>
+
               <p className="mt-3 text-2xl font-semibold text-emerald-600">
                 {money(totalIncomeCents)}
               </p>
+
+              <p className="mt-1 text-xs text-slate-400 dark:text-slate-500">
+                Income for selected month.
+              </p>
             </div>
 
-            <div className="rounded-2xl bg-emerald-50 p-3 text-emerald-600">
+            <div className="rounded-2xl bg-emerald-50 p-3 text-emerald-600 dark:bg-emerald-950/30 dark:text-emerald-400">
               <ArrowUpRight size={22} />
             </div>
           </div>
         </Card>
 
         <Card>
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-4">
             <div>
-              <p className="text-sm font-medium text-slate-500">
+              <p className="text-sm font-medium text-slate-500 dark:text-slate-400">
                 Total Expenses
               </p>
+
               <p className="mt-3 text-2xl font-semibold text-red-600">
                 {money(totalExpenseCents)}
               </p>
+
+              <p className="mt-1 text-xs text-slate-400 dark:text-slate-500">
+                Spending for selected month.
+              </p>
             </div>
 
-            <div className="rounded-2xl bg-red-50 p-3 text-red-600">
+            <div className="rounded-2xl bg-red-50 p-3 text-red-600 dark:bg-red-950/30 dark:text-red-400">
               <ArrowDownRight size={22} />
             </div>
           </div>
         </Card>
 
         <Card>
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-4">
             <div>
-              <p className="text-sm font-medium text-slate-500">
-                Total Transfers
+              <p className="text-sm font-medium text-slate-500 dark:text-slate-400">
+                Account Transfers
               </p>
+
               <p className="mt-3 text-2xl font-semibold text-blue-600">
                 {money(totalTransferCents)}
               </p>
+
+              <p className="mt-1 text-xs text-slate-400 dark:text-slate-500">
+                Money moved between your own accounts.
+              </p>
             </div>
 
-            <div className="rounded-2xl bg-blue-50 p-3 text-blue-600">
+            <div className="rounded-2xl bg-blue-50 p-3 text-blue-600 dark:bg-blue-950/30 dark:text-blue-400">
               <ArrowRightLeft size={22} />
             </div>
           </div>
@@ -307,23 +363,29 @@ export function TransactionsPage() {
           <Card className="mb-5">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <p className="text-sm font-medium text-slate-500">
+                <p className="text-sm font-medium text-slate-500 dark:text-slate-400">
                   Transaction History
                 </p>
-                <h2 className="mt-1 text-xl font-semibold tracking-tight text-slate-950">
+
+                <h2 className="mt-1 text-xl font-semibold tracking-tight text-slate-950 dark:text-white">
                   Recent activity
                 </h2>
+
+                <p className="mt-1 text-xs text-slate-400 dark:text-slate-500">
+                  Showing transactions from the selected month.
+                </p>
               </div>
 
               <div className="flex flex-wrap gap-2">
                 {filters.map((filter) => (
                   <button
                     key={filter.value}
+                    type="button"
                     onClick={() => setActiveFilter(filter.value)}
                     className={`rounded-full px-4 py-2 text-xs font-semibold transition ${
                       activeFilter === filter.value
-                        ? "bg-slate-950 text-white shadow-lg shadow-slate-200"
-                        : "bg-slate-100 text-slate-500 hover:bg-slate-200"
+                        ? "bg-slate-950 text-white shadow-lg shadow-slate-200 dark:bg-white dark:text-slate-950 dark:shadow-black/30"
+                        : "bg-slate-100 text-slate-500 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700 dark:hover:text-white"
                     }`}
                   >
                     {filter.label}
@@ -334,8 +396,8 @@ export function TransactionsPage() {
           </Card>
 
           {loading ? (
-            <div className="rounded-[2rem] border border-white/70 bg-white/80 p-10 text-center shadow-xl shadow-slate-200/70 backdrop-blur">
-              <p className="font-medium text-slate-600">
+            <div className="rounded-[2rem] border border-white/70 bg-white/80 p-10 text-center shadow-xl shadow-slate-200/70 backdrop-blur dark:border-slate-800 dark:bg-slate-900/80 dark:shadow-black/30">
+              <p className="font-medium text-slate-600 dark:text-slate-300">
                 Loading transactions...
               </p>
             </div>
@@ -347,21 +409,22 @@ export function TransactionsPage() {
                   transaction={transaction}
                   accounts={accounts}
                   categories={categories}
-                  onEditTransaction={setEditingTransaction}
+                  onEditTransaction={handleEditTransaction}
                   onDeleteTransaction={handleDeleteTransaction}
                 />
               ))}
 
               {filteredTransactions.length === 0 && (
-                <div className="rounded-[2rem] border border-dashed border-slate-300 bg-white/60 p-10 text-center">
-                  <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 text-slate-500">
+                <div className="rounded-[2rem] border border-dashed border-slate-300 bg-white/60 p-10 text-center dark:border-slate-700 dark:bg-slate-900/60">
+                  <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400">
                     <ReceiptText size={24} />
                   </div>
 
-                  <p className="mt-4 font-medium text-slate-600">
+                  <p className="mt-4 font-medium text-slate-600 dark:text-slate-300">
                     No transactions found.
                   </p>
-                  <p className="mt-2 text-sm text-slate-400">
+
+                  <p className="mt-2 text-sm text-slate-400 dark:text-slate-500">
                     Add your first transaction using the form.
                   </p>
                 </div>
@@ -372,27 +435,29 @@ export function TransactionsPage() {
 
         <div className="space-y-5">
           {accounts.length === 0 && !loading && (
-            <div className="rounded-2xl border border-amber-100 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-700">
+            <div className="rounded-2xl border border-amber-100 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-700 dark:border-amber-900/40 dark:bg-amber-950/30 dark:text-amber-300">
               Create at least one account before adding transactions.
             </div>
           )}
 
-          <TransactionForm
-            accounts={accounts}
-            categories={categories}
-            initialTransaction={editingTransaction}
-            onSubmitTransaction={handleSubmitTransaction}
-            onCancelEdit={() => setEditingTransaction(null)}
-          />
+          <div ref={formRef}>
+            <TransactionForm
+              accounts={accounts}
+              categories={categories}
+              initialTransaction={editingTransaction}
+              onSubmitTransaction={handleSubmitTransaction}
+              onCancelEdit={() => setEditingTransaction(null)}
+            />
+          </div>
 
           {saving && (
-            <p className="rounded-2xl bg-blue-50 px-4 py-3 text-sm font-semibold text-blue-700">
+            <p className="rounded-2xl bg-blue-50 px-4 py-3 text-sm font-semibold text-blue-700 dark:bg-blue-950/30 dark:text-blue-300">
               Saving transaction...
             </p>
           )}
 
           <Card>
-            <p className="text-sm font-medium text-slate-500">
+            <p className="text-sm font-medium text-slate-500 dark:text-slate-400">
               Account Balances
             </p>
 
@@ -400,13 +465,14 @@ export function TransactionsPage() {
               {accounts.map((account) => (
                 <div
                   key={account.id}
-                  className="flex items-center justify-between rounded-2xl bg-slate-50 px-4 py-3"
+                  className="flex items-center justify-between rounded-2xl bg-slate-50 px-4 py-3 dark:bg-slate-950"
                 >
                   <div>
-                    <p className="text-sm font-semibold text-slate-800">
+                    <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">
                       {account.name}
                     </p>
-                    <p className="text-xs capitalize text-slate-500">
+
+                    <p className="text-xs capitalize text-slate-500 dark:text-slate-400">
                       {account.type.replace("_", " ")}
                     </p>
                   </div>
@@ -415,7 +481,7 @@ export function TransactionsPage() {
                     className={`text-sm font-semibold ${
                       account.balanceCents < 0
                         ? "text-red-600"
-                        : "text-slate-950"
+                        : "text-slate-950 dark:text-white"
                     }`}
                   >
                     {money(account.balanceCents)}
@@ -424,7 +490,7 @@ export function TransactionsPage() {
               ))}
 
               {accounts.length === 0 && (
-                <p className="text-sm text-slate-400">
+                <p className="text-sm text-slate-400 dark:text-slate-500">
                   No accounts available yet.
                 </p>
               )}

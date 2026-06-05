@@ -80,7 +80,7 @@ export function AccountCard({ account, onEditAccount, onDeleteAccount }: Account
             <button
               type="button"
               onClick={() => onEditAccount(account)}
-              className="rounded-2xl p-2 text-slate-400 transition hover:bg-blue-50 hover:text-blue-600"
+              className="flex h-11 w-11 items-center justify-center rounded-2xl text-slate-400 transition hover:bg-blue-50 hover:text-blue-600 active:scale-95 dark:hover:bg-blue-950/30 dark:hover:text-blue-400"
               aria-label="Edit account"
               title="Edit account"
             >
@@ -100,7 +100,7 @@ export function AccountCard({ account, onEditAccount, onDeleteAccount }: Account
                   onDeleteAccount(account.id);
                 }
               }}
-              className="rounded-2xl p-2 text-slate-400 transition hover:bg-red-50 hover:text-red-600"
+              className="flex h-11 w-11 items-center justify-center rounded-2xl text-slate-400 transition hover:bg-red-50 hover:text-red-600 active:scale-95 dark:hover:bg-red-950/30 dark:hover:text-red-400"
               aria-label="Delete account"
               title="Delete account"
             >

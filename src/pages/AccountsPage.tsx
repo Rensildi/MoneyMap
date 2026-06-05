@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { AccountCard } from "../components/accounts/AccountCard";
 import { AccountForm } from "../components/accounts/AccountForm";
 import { Card } from "../components/ui/Card";
@@ -16,6 +16,7 @@ import type { Account } from "../types/account";
 export function AccountsPage() {
   const { user } = useAuth();
   const { money } = useMoney();
+  const formRef = useRef<HTMLDivElement | null>(null);
 
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [loading, setLoading] = useState(true);
@@ -137,6 +138,16 @@ export function AccountsPage() {
       }
     }
   }
+  function handleEditAccount(account: Account) {
+    setEditingAccount(account);
+
+    window.setTimeout(() => {
+      formRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }, 100);
+  }
 
   return (
     <div>
@@ -201,7 +212,7 @@ export function AccountsPage() {
                   <AccountCard
                     key={account.id}
                     account={account}
-                    onEditAccount={setEditingAccount}
+                    onEditAccount={handleEditAccount}
                     onDeleteAccount={handleDeleteAccount}
                   />
                 ))}
@@ -222,11 +233,13 @@ export function AccountsPage() {
         </div>
 
         <div>
-          <AccountForm
-            initialAccount={editingAccount}
-            onSubmitAccount={handleSubmitAccount}
-            onCancelEdit={() => setEditingAccount(null)}
-          />
+          <div ref={formRef}>
+            <AccountForm
+              initialAccount={editingAccount}
+              onSubmitAccount={handleSubmitAccount}
+              onCancelEdit={() => setEditingAccount(null)}
+            />
+          </div>
 
           {saving && (
             <p className="mt-3 rounded-2xl bg-blue-50 px-4 py-3 text-sm font-semibold text-blue-700">

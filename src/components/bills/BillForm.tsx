@@ -222,7 +222,8 @@ export function BillForm({
       <div className="mt-6 space-y-3">
         <button
           type="submit"
-          className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-slate-300 transition hover:-translate-y-0.5 hover:bg-slate-800"
+          disabled={accounts.length === 0}
+          className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-slate-300 transition hover:-translate-y-0.5 hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-white dark:text-slate-950"
         >
           {isEditing ? <Save size={18} /> : <Plus size={18} />}
           {isEditing ? "Save bill" : "Add bill"}

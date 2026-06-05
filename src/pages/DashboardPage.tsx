@@ -5,7 +5,6 @@ import { FreeSpendingCard } from "../components/dashboard/FreeSpendingCard";
 import { SpendingChart } from "../components/dashboard/SpendingChart";
 import { Card } from "../components/ui/Card";
 import { useAuth } from "../hooks/useAuth";
-// import { formatMoney } from "../lib/formatMoney";
 import { useMoney } from "../hooks/useMoney";
 import { fetchAccounts } from "../services/accountService";
 import { fetchBills } from "../services/billService";
@@ -61,7 +60,7 @@ export function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [pageError, setPageError] = useState("");
 
-  const currentMonth = getCurrentMonth();
+  const currentMonth = useMemo(() => getCurrentMonth(), []);
 
   useEffect(() => {
     async function loadDashboardData() {
@@ -200,32 +199,44 @@ export function DashboardPage() {
       <div className="mb-8 flex flex-col justify-between gap-5 sm:flex-row sm:items-center">
         <div>
           <p className="text-sm font-semibold text-blue-600">Dashboard</p>
-          <h1 className="mt-2 text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">
+
+          <h1 className="mt-2 text-3xl font-semibold tracking-tight text-slate-950 dark:text-white sm:text-4xl">
             Good morning, {userName}
           </h1>
-          <p className="mt-2 text-sm text-slate-500">
+
+          <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
             Here is your real money snapshot for this month.
           </p>
         </div>
 
-        <Link
-          to="/transactions"
-          className="inline-flex items-center justify-center gap-2 rounded-2xl bg-slate-950 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-slate-300 transition hover:-translate-y-0.5 hover:bg-slate-800"
-        >
-          <Plus size={18} />
-          Add transaction
-        </Link>
+        <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
+          <Link
+            to="/accounts"
+            className="inline-flex items-center justify-center gap-2 rounded-2xl bg-white px-5 py-3 text-sm font-semibold text-slate-950 shadow-lg shadow-slate-200 transition hover:-translate-y-0.5 hover:bg-slate-50 dark:bg-slate-900 dark:text-white dark:shadow-black/30 dark:hover:bg-slate-800"
+          >
+            <Plus size={18} />
+            Add account
+          </Link>
+
+          <Link
+            to="/transactions"
+            className="inline-flex items-center justify-center gap-2 rounded-2xl bg-slate-950 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-slate-300 transition hover:-translate-y-0.5 hover:bg-slate-800 dark:bg-white dark:text-slate-950 dark:shadow-black/30"
+          >
+            <Plus size={18} />
+            Add transaction
+          </Link>
+        </div>
       </div>
 
       {pageError && (
-        <div className="mb-5 rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
+        <div className="mb-5 rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700 dark:border-red-900/40 dark:bg-red-950/30 dark:text-red-300">
           {pageError}
         </div>
       )}
 
       {loading ? (
-        <div className="rounded-[2rem] border border-white/70 bg-white/80 p-10 text-center shadow-xl shadow-slate-200/70 backdrop-blur">
-          <p className="font-medium text-slate-600">
+        <div className="rounded-[2rem] border border-white/70 bg-white/80 p-10 text-center shadow-xl shadow-slate-200/70 backdrop-blur dark:border-slate-800 dark:bg-slate-900/80 dark:shadow-black/30">
+          <p className="font-medium text-slate-600 dark:text-slate-300">
             Loading your dashboard...
           </p>
         </div>
@@ -235,25 +246,27 @@ export function DashboardPage() {
             <Card className="lg:col-span-2">
               <div className="flex items-start justify-between">
                 <div>
-                  <p className="text-sm font-medium text-slate-500">
+                  <p className="text-sm font-medium text-slate-500 dark:text-slate-400">
                     Total Balance
                   </p>
+
                   <h2
                     className={`mt-3 text-4xl font-semibold tracking-tight ${
                       totalBalanceCents < 0
                         ? "text-red-600"
-                        : "text-slate-950"
+                        : "text-slate-950 dark:text-white"
                     }`}
                   >
                     {money(totalBalanceCents)}
                   </h2>
-                  <p className="mt-2 text-sm text-slate-500">
+
+                  <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
                     Across {accounts.length} manual account
                     {accounts.length === 1 ? "" : "s"}
                   </p>
                 </div>
 
-                <div className="rounded-2xl bg-blue-50 p-3 text-blue-600">
+                <div className="rounded-2xl bg-blue-50 p-3 text-blue-600 dark:bg-blue-950/30 dark:text-blue-400">
                   <WalletCards size={24} />
                 </div>
               </div>
@@ -262,19 +275,21 @@ export function DashboardPage() {
                 {accounts.slice(0, 3).map((account) => (
                   <div
                     key={account.id}
-                    className="rounded-2xl border border-slate-100 bg-slate-50 p-4"
+                    className="rounded-2xl border border-slate-100 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950"
                   >
-                    <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
+                    <p className="text-xs font-medium uppercase tracking-wide text-slate-400 dark:text-slate-500">
                       {account.type.replace("_", " ")}
                     </p>
-                    <p className="mt-2 text-sm font-semibold text-slate-800">
+
+                    <p className="mt-2 text-sm font-semibold text-slate-800 dark:text-slate-100">
                       {account.name}
                     </p>
+
                     <p
                       className={`mt-1 text-lg font-semibold ${
                         account.balanceCents < 0
                           ? "text-red-600"
-                          : "text-slate-950"
+                          : "text-slate-950 dark:text-white"
                       }`}
                     >
                       {money(account.balanceCents)}
@@ -283,13 +298,22 @@ export function DashboardPage() {
                 ))}
 
                 {accounts.length === 0 && (
-                  <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-4 sm:col-span-3">
-                    <p className="text-sm font-medium text-slate-600">
+                  <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-4 dark:border-slate-700 dark:bg-slate-950 sm:col-span-3">
+                    <p className="text-sm font-medium text-slate-600 dark:text-slate-300">
                       No accounts yet.
                     </p>
-                    <p className="mt-1 text-xs text-slate-400">
-                      Create an account first to see your balance here.
+
+                    <p className="mt-1 text-xs text-slate-400 dark:text-slate-500">
+                      Start by creating a checking, savings, cash, or credit
+                      card account.
                     </p>
+
+                    <Link
+                      to="/accounts"
+                      className="mt-4 inline-flex rounded-2xl bg-slate-950 px-4 py-2 text-sm font-semibold text-white dark:bg-white dark:text-slate-950"
+                    >
+                      Create account
+                    </Link>
                   </div>
                 )}
               </div>
@@ -305,15 +329,16 @@ export function DashboardPage() {
             <Card>
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-slate-500">
+                  <p className="text-sm font-medium text-slate-500 dark:text-slate-400">
                     Income This Month
                   </p>
-                  <p className="mt-3 text-2xl font-semibold text-slate-950">
+
+                  <p className="mt-3 text-2xl font-semibold text-emerald-600">
                     {money(incomeThisMonthCents)}
                   </p>
                 </div>
 
-                <div className="rounded-2xl bg-emerald-50 p-3 text-emerald-600">
+                <div className="rounded-2xl bg-emerald-50 p-3 text-emerald-600 dark:bg-emerald-950/30 dark:text-emerald-400">
                   <TrendingUp size={22} />
                 </div>
               </div>
@@ -322,22 +347,23 @@ export function DashboardPage() {
             <Card>
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-slate-500">
+                  <p className="text-sm font-medium text-slate-500 dark:text-slate-400">
                     Expenses This Month
                   </p>
+
                   <p className="mt-3 text-2xl font-semibold text-red-600">
                     {money(expensesThisMonthCents)}
                   </p>
                 </div>
 
-                <div className="rounded-2xl bg-red-50 p-3 text-red-600">
+                <div className="rounded-2xl bg-red-50 p-3 text-red-600 dark:bg-red-950/30 dark:text-red-400">
                   <TrendingDown size={22} />
                 </div>
               </div>
             </Card>
 
             <Card className="md:col-span-2">
-              <p className="text-sm font-medium text-slate-500">
+              <p className="text-sm font-medium text-slate-500 dark:text-slate-400">
                 Upcoming Bills
               </p>
 
@@ -345,26 +371,27 @@ export function DashboardPage() {
                 {upcomingBills.map((bill) => (
                   <div
                     key={bill.id}
-                    className="flex items-center justify-between rounded-2xl bg-slate-50 px-4 py-3"
+                    className="flex items-center justify-between rounded-2xl bg-slate-50 px-4 py-3 dark:bg-slate-950"
                   >
                     <div>
-                      <p className="text-sm font-semibold text-slate-800">
+                      <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">
                         {bill.name}
                       </p>
-                      <p className="text-xs text-slate-500">
+
+                      <p className="text-xs text-slate-500 dark:text-slate-400">
                         Due {formatBillDate(bill.billDate)}
                       </p>
                     </div>
 
-                    <p className="text-sm font-semibold text-slate-950">
+                    <p className="text-sm font-semibold text-slate-950 dark:text-white">
                       {money(bill.amountCents)}
                     </p>
                   </div>
                 ))}
 
                 {upcomingBills.length === 0 && (
-                  <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-4 py-6 text-center">
-                    <p className="text-sm font-medium text-slate-500">
+                  <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-4 py-6 text-center dark:border-slate-700 dark:bg-slate-950">
+                    <p className="text-sm font-medium text-slate-500 dark:text-slate-400">
                       No upcoming bills for the rest of this month.
                     </p>
                   </div>

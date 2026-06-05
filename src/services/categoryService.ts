@@ -56,11 +56,92 @@ const defaultCategories: {
     countsTowardFreeSpending: false,
   },
   {
-    name: "Utilities",
+    name: "Home Utilities",
     type: "expense",
     countsTowardFreeSpending: false,
   },
+  {
+    name: "Phone",
+    type: "expense",
+    countsTowardFreeSpending: false,
+  },
+  {
+    name: "Internet",
+    type: "expense",
+    countsTowardFreeSpending: false,
+  },
+  {
+    name: "Streaming",
+    type: "expense",
+    countsTowardFreeSpending: true,
+  },
+  {
+    name: "Subscriptions",
+    type: "expense",
+    countsTowardFreeSpending: true,
+  },
+  {
+    name: "Insurance",
+    type: "expense",
+    countsTowardFreeSpending: false,
+  },
+  {
+    name: "Property Taxes",
+    type: "expense",
+    countsTowardFreeSpending: false,
+  },
+  {
+    name: "Car Payment",
+    type: "expense",
+    countsTowardFreeSpending: false,
+  },
+  {
+    name: "Gym",
+    type: "expense",
+    countsTowardFreeSpending: true,
+  },
 ];
+
+const categoryOrder = [
+  "Paycheck",
+  "Side Work",
+  "Restaurants",
+  "Coffee",
+  "Shopping",
+  "Groceries",
+  "Gas",
+  "Rent",
+  "Home Utilities",
+  "Phone",
+  "Internet",
+  "Streaming",
+  "Subscriptions",
+  "Insurance",
+  "Property Taxes",
+  "Car Payment",
+  "Gym",
+];
+
+function sortCategories(categories: Category[]) {
+  return [...categories].sort((a, b) => {
+    const aIndex = categoryOrder.indexOf(a.name);
+    const bIndex = categoryOrder.indexOf(b.name);
+
+    if (aIndex === -1 && bIndex === -1) {
+      return a.name.localeCompare(b.name);
+    }
+
+    if (aIndex === -1) {
+      return 1;
+    }
+
+    if (bIndex === -1) {
+      return -1;
+    }
+
+    return aIndex - bIndex;
+  });
+}
 
 function mapCategoryRow(row: CategoryRow): Category {
   return {
@@ -84,7 +165,9 @@ export async function fetchCategories(userId: string): Promise<Category[]> {
     throw error;
   }
 
-  return (data ?? []).map((row) => mapCategoryRow(row as CategoryRow));
+  return sortCategories(
+    (data ?? []).map((row) => mapCategoryRow(row as CategoryRow)),
+  );
 }
 
 export async function seedDefaultCategoriesIfNeeded(
@@ -92,30 +175,33 @@ export async function seedDefaultCategoriesIfNeeded(
 ): Promise<Category[]> {
   const existingCategories = await fetchCategories(userId);
 
-  if (existingCategories.length > 0) {
+  const missingCategories = defaultCategories.filter((defaultCategory) => {
+    return !existingCategories.some(
+      (existingCategory) =>
+        existingCategory.name.toLowerCase() ===
+          defaultCategory.name.toLowerCase() &&
+        existingCategory.type === defaultCategory.type,
+    );
+  });
+
+  if (missingCategories.length === 0) {
     return existingCategories;
   }
 
-  const rowsToInsert = defaultCategories.map((category) => ({
+  const rowsToInsert = missingCategories.map((category) => ({
     user_id: userId,
     name: category.name,
     type: category.type,
     counts_toward_free_spending: category.countsTowardFreeSpending,
   }));
 
-  const { data, error } = await supabase
-    .from("categories")
-    .insert(rowsToInsert)
-    .select(
-      "id, user_id, name, type, counts_toward_free_spending, created_at",
-    )
-    .order("created_at", { ascending: true });
+  const { error } = await supabase.from("categories").insert(rowsToInsert);
 
   if (error) {
     throw error;
   }
 
-  return (data ?? []).map((row) => mapCategoryRow(row as CategoryRow));
+  return fetchCategories(userId);
 }
 
 export async function updateCategoryFreeSpendingStatus(

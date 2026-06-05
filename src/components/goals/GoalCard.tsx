@@ -124,7 +124,7 @@ export function GoalCard({
           <button
             type="button"
             onClick={() => onEditGoal(goal)}
-            className="rounded-2xl p-2 text-slate-400 transition hover:bg-blue-50 hover:text-blue-600"
+            className="flex h-11 w-11 items-center justify-center rounded-2xl text-slate-400 transition hover:bg-blue-50 hover:text-blue-600 active:scale-95 dark:hover:bg-blue-950/30 dark:hover:text-blue-400"
             aria-label="Edit goal"
             title="Edit goal"
           >
@@ -142,7 +142,7 @@ export function GoalCard({
                 onDeleteGoal(goal.id);
               }
             }}
-            className="rounded-2xl p-2 text-slate-400 transition hover:bg-red-50 hover:text-red-600"
+            className="flex h-11 w-11 items-center justify-center rounded-2xl text-slate-400 transition hover:bg-red-50 hover:text-red-600 active:scale-95 dark:hover:bg-red-950/30 dark:hover:text-red-400"
             aria-label="Delete goal"
             title="Delete goal"
           >
